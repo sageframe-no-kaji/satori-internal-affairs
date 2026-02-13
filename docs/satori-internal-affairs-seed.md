@@ -410,6 +410,73 @@ It is explicitly **not allowed** to:
 
 This keeps the system dramatic, flexible, and human—without being unpredictable.
 
+Perfect. Here is the concise, structure-focused version with minimal rationale:
+
+⸻
+
+My LLM Architecture Strategy
+
+I will use the ChatGPT API initially, but structure the system so the model provider can be swapped later.
+
+Core Rule
+
+All LLM access goes through a single abstraction layer.
+
+No other part of the system calls the model directly.
+
+⸻
+
+Architecture Structure
+
+1. Deterministic Core — Satori
+
+Pure backend logic:
+• State machine
+• Action validation
+• Time progression
+• Vitals / consequences
+• Win / loss conditions
+
+No LLM involvement.
+
+⸻
+
+2. Case Generation — Anamnesis
+
+Flow: 1. Accept structured seed 2. Call LLMClient.generateCase(seed) 3. Validate JSON against schema 4. Store validated case definition 5. Freeze case (no dynamic mutation)
+
+LLM only generates structured artifacts.
+
+⸻
+
+3. Narrative Layer
+
+Flow: 1. Engine updates state 2. Engine emits event object 3. Call LLMClient.narrate(event, state) 4. Return formatted text
+
+LLM never modifies state.
+
+⸻
+
+LLM Abstraction Layer
+
+Single interface:
+
+interface LLMClient {
+generateCase(seed): CaseDefinition
+narrate(event, state): string
+explain(context): string
+}
+
+Implementation A:
+• ChatGPT API
+
+Implementation B (later):
+• Local model
+• Self-hosted inference
+• Different provider
+
+The rest of the system does not change.
+
 ---
 
 ### Why This Stack Works
@@ -447,3 +514,18 @@ It teaches something real.
 And it’s something I genuinely want to build.
 
 ---
+
+## What I Want to Learn (Technically)
+
+Through this project, I want to deeply understand how to design and orchestrate LLM-powered systems that are reliable, constrained, and stateful rather than free-form or improvisational. Specifically, I want to learn how to:
+
+- Separate narrative generation from decision logic so that an LLM can enhance an experience without controlling outcomes
+- Design deterministic state machines that interact cleanly with probabilistic language models
+- Build a backend case engine that enforces rules, timing, and consequences while remaining flexible and extensible
+- Create structured prompt pipelines and schemas that allow LLMs to generate complex artifacts (like full medical cases) safely and repeatably
+- Validate, version, and curate LLM-generated content before it is used in live experiences
+- Manage long-running, turn-based interactions with clear state, memory, and progression
+- Design frontend experiences that feel natural and dramatic while remaining constrained and explainable
+- Explore how LLMs can function as tutors and narrative layers rather than authoritative sources of truth
+
+Overall, I want to learn how to build serious, production-grade applications that integrate LLMs as components in a larger system—treating them as powerful collaborators rather than autonomous agents.
