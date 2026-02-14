@@ -1,0 +1,742 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://satori-internal-affairs.dev/schemas/case-definition.schema.json",
+  "title": "Case Definition Schema",
+  "description": "Complete schema for medical mystery case definitions in the Satori Internal Affairs system. Defines the contract between Anamnesis (case generation) and Satori (case execution).",
+  "type": "object",
+  "required": ["id", "version", "metadata", "patient", "ground_truth", "action_costs", "nodes", "outcome_evaluation"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique identifier for this case (UUID format)"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version of the case definition (e.g., '1.0.0')"
+    },
+    "metadata": {
+      "$ref": "#/$defs/Metadata"
+    },
+    "patient": {
+      "$ref": "#/$defs/PatientContext"
+    },
+    "ground_truth": {
+      "$ref": "#/$defs/GroundTruth"
+    },
+    "action_costs": {
+      "type": "object",
+      "description": "Time costs for each action type in minutes",
+      "additionalProperties": {
+        "$ref": "#/$defs/TimeCost"
+      }
+    },
+    "nodes": {
+      "type": "array",
+      "description": "The atomic units of the simulation - every piece of case reality is a node",
+      "items": {
+        "$ref": "#/$defs/Node"
+      },
+      "minItems": 1
+    },
+    "outcome_evaluation": {
+      "$ref": "#/$defs/OutcomeEvaluation"
+    }
+  },
+  "$defs": {
+    "Metadata": {
+      "type": "object",
+      "description": "Case metadata including difficulty, learning objectives, and content boundaries",
+      "required": ["difficulty", "estimated_duration_minutes", "simulated_duration_minutes", "learning_objectives", "dramatic_tone"],
+      "properties": {
+        "difficulty": {
+          "type": "string",
+          "enum": ["tutorial", "beginner", "intermediate", "advanced", "expert"],
+          "description": "Difficulty level of the case"
+        },
+        "estimated_duration_minutes": {
+          "type": "integer",
+          "description": "Expected real-world time for a player to complete this case",
+          "minimum": 1
+        },
+        "simulated_duration_minutes": {
+          "type": "integer",
+          "description": "Total simulated time span of the case in game minutes",
+          "minimum": 1
+        },
+        "learning_objectives": {
+          "type": "array",
+          "description": "Educational goals and clinical lessons this case teaches",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        },
+        "dramatic_tone": {
+          "type": "string",
+          "enum": ["medical_mystery", "trauma", "ethical_dilemma", "relational", "procedural"],
+          "description": "Primary narrative tone and focus of the case"
+        },
+        "content_boundaries": {
+          "type": "array",
+          "description": "Content warnings or boundaries (e.g., 'no graphic violence', 'contains death')",
+          "items": {
+            "type": "string"
+          }
+        },
+        "tags": {
+          "type": "array",
+          "description": "Searchable tags for case categorization",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "PatientContext": {
+      "type": "object",
+      "description": "Patient identity and presentation information. Narrative layer for Internal Affairs display, with age/sex medically relevant for Satori.",
+      "required": ["name", "age", "sex", "setting", "chief_complaint", "appearance", "arriving_vitals"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Patient's full name"
+        },
+        "age": {
+          "type": "integer",
+          "description": "Patient's age in years",
+          "minimum": 0,
+          "maximum": 150
+        },
+        "sex": {
+          "type": "string",
+          "enum": ["male", "female", "intersex"],
+          "description": "Biological sex (medically relevant)"
+        },
+        "setting": {
+          "type": "string",
+          "description": "Clinical setting where case takes place (e.g., 'Emergency Department', 'Outpatient Clinic')"
+        },
+        "chief_complaint": {
+          "type": "string",
+          "description": "Why the patient is seeking care"
+        },
+        "appearance": {
+          "type": "string",
+          "description": "Physical appearance and presentation of the patient"
+        },
+        "backstory": {
+          "type": "string",
+          "description": "Brief contextual background - NOT directly revealed to player, used for narrative consistency"
+        },
+        "arriving_vitals": {
+          "$ref": "#/$defs/VitalSigns",
+          "description": "Baseline vital signs on patient arrival"
+        },
+        "triage_note": {
+          "type": "string",
+          "description": "Initial triage assessment note"
+        }
+      }
+    },
+    "VitalSigns": {
+      "type": "object",
+      "description": "Patient vital signs. All fields optional - nodes only declare vitals they affect. Satori computes current vitals as worst value across active nodes and baseline.",
+      "properties": {
+        "heart_rate": {
+          "type": "integer",
+          "description": "Heart rate in beats per minute",
+          "minimum": 0,
+          "maximum": 300
+        },
+        "blood_pressure_systolic": {
+          "type": "integer",
+          "description": "Systolic blood pressure in mmHg",
+          "minimum": 0,
+          "maximum": 300
+        },
+        "blood_pressure_diastolic": {
+          "type": "integer",
+          "description": "Diastolic blood pressure in mmHg",
+          "minimum": 0,
+          "maximum": 200
+        },
+        "temperature": {
+          "type": "number",
+          "description": "Body temperature in Fahrenheit",
+          "minimum": 80.0,
+          "maximum": 115.0
+        },
+        "respiratory_rate": {
+          "type": "integer",
+          "description": "Respiratory rate in breaths per minute",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "o2_saturation": {
+          "type": "integer",
+          "description": "Oxygen saturation percentage",
+          "minimum": 0,
+          "maximum": 100
+        }
+      }
+    },
+    "GroundTruth": {
+      "type": "object",
+      "description": "Clinical truth about the case - never revealed to player during gameplay, used for outcome evaluation and teaching debrief",
+      "required": ["diagnosis", "differential", "mechanism", "key_insight", "optimal_path", "narrative_hooks"],
+      "properties": {
+        "diagnosis": {
+          "type": "string",
+          "description": "The correct diagnosis"
+        },
+        "differential": {
+          "type": "array",
+          "description": "Alternative diagnoses that should be considered",
+          "items": {
+            "type": "string"
+          }
+        },
+        "mechanism": {
+          "type": "string",
+          "description": "Pathophysiological mechanism of the condition"
+        },
+        "key_insight": {
+          "type": "string",
+          "description": "The critical reasoning or discovery needed to reach the correct diagnosis"
+        },
+        "optimal_path": {
+          "type": "array",
+          "description": "Ideal sequence of actions to solve the case",
+          "items": {
+            "$ref": "#/$defs/OptimalStep"
+          }
+        },
+        "critical_time_minutes": {
+          "type": "integer",
+          "description": "Time limit before irreversible harm occurs (null if no hard deadline)",
+          "minimum": 0
+        },
+        "narrative_hooks": {
+          "type": "array",
+          "description": "Dramatic and teaching elements woven into the case structure",
+          "items": {
+            "$ref": "#/$defs/NarrativeHook"
+          }
+        }
+      }
+    },
+    "OptimalStep": {
+      "type": "object",
+      "description": "A step in the optimal solution path",
+      "required": ["action", "description", "time_minutes"],
+      "properties": {
+        "action": {
+          "type": "string",
+          "description": "The action to perform"
+        },
+        "description": {
+          "type": "string",
+          "description": "Why this action is part of the optimal path"
+        },
+        "time_minutes": {
+          "type": "integer",
+          "description": "Cumulative time from case start when this action should occur",
+          "minimum": 0
+        }
+      }
+    },
+    "NarrativeHook": {
+      "type": "object",
+      "description": "A dramatic or teaching element embedded in the case",
+      "required": ["type", "description", "structural_role"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["misleading_assumption", "hidden_connection", "ethical_tension", "relational_gate", "red_herring"],
+          "description": "Category of narrative hook"
+        },
+        "description": {
+          "type": "string",
+          "description": "What this hook adds to the case"
+        },
+        "structural_role": {
+          "type": "string",
+          "description": "How this hook connects to the node graph and case mechanics"
+        }
+      }
+    },
+    "TimeCost": {
+      "type": "object",
+      "description": "Time cost for performing an action",
+      "required": ["action_minutes"],
+      "properties": {
+        "action_minutes": {
+          "type": "integer",
+          "description": "Time to perform the action itself",
+          "minimum": 0
+        },
+        "result_delay_minutes": {
+          "type": "integer",
+          "description": "Additional time until results become available (for labs, imaging, etc.)",
+          "minimum": 0
+        }
+      }
+    },
+    "Node": {
+      "type": "object",
+      "description": "Atomic unit of simulation. Every piece of case reality is a node with its own lifecycle.",
+      "required": ["id", "type", "content", "activation"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for this node within the case"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["medical_finding", "lab_result", "imaging", "history", "relational", "emotional", "behavioral", "progression", "intervention_response", "outcome"],
+          "description": "Category of node determining its role in the case"
+        },
+        "content": {
+          "$ref": "#/$defs/NodeContent",
+          "description": "Narrative payload - what the player sees/reads"
+        },
+        "activation": {
+          "$ref": "#/$defs/ActivationRule",
+          "description": "When this node becomes live in the simulation"
+        },
+        "reveal": {
+          "$ref": "#/$defs/RevealRule",
+          "description": "How the player discovers this node (null for auto-revealed nodes like progressions)"
+        },
+        "timer": {
+          "$ref": "#/$defs/NodeTimer",
+          "description": "Countdown from activation driving time pressure (null if no timer)"
+        },
+        "vital_signs": {
+          "$ref": "#/$defs/VitalSigns",
+          "description": "Vital signs this node wants when active (contributes to worst-case computation)"
+        },
+        "effects": {
+          "$ref": "#/$defs/NodeEffects",
+          "description": "What happens when this node activates, reveals, expires, or gets intervened on"
+        },
+        "outcome_weight": {
+          "$ref": "#/$defs/OutcomeWeight",
+          "description": "How this node contributes to final case scoring"
+        },
+        "teaching_note": {
+          "type": "string",
+          "description": "Teaching point associated with this node (for debrief layer)"
+        }
+      }
+    },
+    "NodeContent": {
+      "type": "object",
+      "description": "Narrative payload of a node. In Phase 1, text is frozen. In future phases, narrative_text may be dynamically generated while structured_data remains frozen.",
+      "required": ["narrative_text"],
+      "properties": {
+        "narrative_text": {
+          "type": "string",
+          "description": "What the player reads when this node reveals"
+        },
+        "structured_data": {
+          "type": "object",
+          "description": "Machine-readable medical data (lab values, measurements, etc.)",
+          "additionalProperties": true
+        },
+        "stage_narratives": {
+          "type": "array",
+          "description": "For progression nodes with multiple stages, narrative for each stage",
+          "items": {
+            "$ref": "#/$defs/StageNarrative"
+          }
+        }
+      }
+    },
+    "StageNarrative": {
+      "type": "object",
+      "description": "Narrative for a specific timer stage in a progression node",
+      "required": ["stage_index", "narrative_text"],
+      "properties": {
+        "stage_index": {
+          "type": "integer",
+          "description": "Which stage this narrative belongs to (0-indexed)",
+          "minimum": 0
+        },
+        "narrative_text": {
+          "type": "string",
+          "description": "Narrative text for this stage"
+        },
+        "structured_data": {
+          "type": "object",
+          "description": "Machine-readable data for this stage",
+          "additionalProperties": true
+        }
+      }
+    },
+    "ActivationRule": {
+      "type": "object",
+      "description": "Defines when a node becomes live. OR between paths, AND within each path.",
+      "required": ["paths"],
+      "properties": {
+        "paths": {
+          "type": "array",
+          "description": "Node activates when ANY path is satisfied (OR logic)",
+          "items": {
+            "$ref": "#/$defs/ConditionPath"
+          },
+          "minItems": 1
+        },
+        "on_activate": {
+          "type": "array",
+          "description": "Effects that fire when the node activates",
+          "items": {
+            "$ref": "#/$defs/Effect"
+          }
+        },
+        "starts_active": {
+          "type": "boolean",
+          "description": "If true, node is active from case start",
+          "default": false
+        }
+      }
+    },
+    "ConditionPath": {
+      "type": "object",
+      "description": "A single path of conditions that must all be met (AND logic)",
+      "required": ["conditions"],
+      "properties": {
+        "conditions": {
+          "type": "array",
+          "description": "All conditions in this path must be true for path to be satisfied",
+          "items": {
+            "$ref": "#/$defs/Condition"
+          },
+          "minItems": 1
+        }
+      }
+    },
+    "Condition": {
+      "type": "object",
+      "description": "A single condition that can be evaluated true or false",
+      "required": ["type", "target"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["flag_set", "flag_not_set", "node_active", "node_revealed", "node_expired", "time_elapsed", "vital_threshold"],
+          "description": "Type of condition to evaluate"
+        },
+        "target": {
+          "type": "string",
+          "description": "What to check: flag name, node ID, vital name, etc."
+        },
+        "value": {
+          "description": "Threshold value for comparisons (time in minutes, vital value, etc.)"
+        },
+        "comparator": {
+          "type": "string",
+          "enum": ["gt", "lt", "gte", "lte", "eq"],
+          "description": "Comparison operator for threshold conditions"
+        }
+      }
+    },
+    "RevealRule": {
+      "type": "object",
+      "description": "How the player discovers this node",
+      "required": ["action"],
+      "properties": {
+        "action": {
+          "type": "string",
+          "description": "Action type that reveals this node"
+        },
+        "subcategory": {
+          "type": "string",
+          "description": "Subcategory of action (e.g., 'dietary', 'neuro', 'cardiac', 'family')"
+        },
+        "conditions": {
+          "type": "array",
+          "description": "Additional conditions required beyond just performing the action",
+          "items": {
+            "$ref": "#/$defs/Condition"
+          }
+        },
+        "auto_reveal": {
+          "type": "boolean",
+          "description": "If true, reveals automatically when active without player action",
+          "default": false
+        },
+        "delay_minutes": {
+          "type": "integer",
+          "description": "Time between action and reveal (for lab results, imaging, etc.)",
+          "minimum": 0
+        }
+      }
+    },
+    "NodeTimer": {
+      "type": "object",
+      "description": "Countdown timer from node activation, driving time pressure",
+      "required": ["duration_minutes", "on_expire"],
+      "properties": {
+        "duration_minutes": {
+          "type": "integer",
+          "description": "Total timer duration from activation",
+          "minimum": 0
+        },
+        "pause_conditions": {
+          "type": "array",
+          "description": "Conditions that pause the timer",
+          "items": {
+            "$ref": "#/$defs/Condition"
+          }
+        },
+        "stages": {
+          "type": "array",
+          "description": "Progressive effects at specific time points",
+          "items": {
+            "$ref": "#/$defs/TimerStage"
+          }
+        },
+        "on_expire": {
+          "type": "array",
+          "description": "Effects that fire when timer reaches zero",
+          "items": {
+            "$ref": "#/$defs/Effect"
+          },
+          "minItems": 1
+        }
+      }
+    },
+    "TimerStage": {
+      "type": "object",
+      "description": "Effects that occur at a specific point during a timer countdown",
+      "required": ["at_minutes", "effects"],
+      "properties": {
+        "at_minutes": {
+          "type": "integer",
+          "description": "Minutes after activation when this stage triggers",
+          "minimum": 0
+        },
+        "effects": {
+          "type": "array",
+          "description": "Effects to apply at this stage",
+          "items": {
+            "$ref": "#/$defs/Effect"
+          }
+        },
+        "vital_signs": {
+          "$ref": "#/$defs/VitalSigns",
+          "description": "Vital signs at this stage"
+        }
+      }
+    },
+    "NodeEffects": {
+      "type": "object",
+      "description": "Effects triggered by node lifecycle events",
+      "properties": {
+        "on_reveal": {
+          "type": "array",
+          "description": "Effects when node is revealed to player",
+          "items": {
+            "$ref": "#/$defs/Effect"
+          }
+        },
+        "on_expire": {
+          "type": "array",
+          "description": "Effects when timer expires",
+          "items": {
+            "$ref": "#/$defs/Effect"
+          }
+        },
+        "on_intervene": {
+          "$ref": "#/$defs/InterventionEffect",
+          "description": "Effects when specific intervention is applied"
+        }
+      }
+    },
+    "InterventionEffect": {
+      "type": "object",
+      "description": "Effect triggered by a specific treatment or intervention",
+      "required": ["treatment", "effects"],
+      "properties": {
+        "treatment": {
+          "type": "string",
+          "description": "Name of treatment that triggers this effect"
+        },
+        "effects": {
+          "type": "array",
+          "description": "Effects to apply when this treatment is given",
+          "items": {
+            "$ref": "#/$defs/Effect"
+          }
+        }
+      }
+    },
+    "Effect": {
+      "type": "object",
+      "description": "A single effect that modifies game state",
+      "required": ["type", "target"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["set_flag", "clear_flag", "activate_node", "deactivate_node", "modify_timer", "unlock_action", "lock_action", "override_vitals", "end_case"],
+          "description": "Type of effect to apply"
+        },
+        "target": {
+          "type": "string",
+          "description": "What to affect: flag name, node ID, action type, etc."
+        },
+        "value": {
+          "description": "Value for the effect (minutes for timer modification, vital values for override, etc.)"
+        }
+      }
+    },
+    "OutcomeWeight": {
+      "type": "object",
+      "description": "How this node contributes to final case scoring",
+      "required": ["category", "impact"],
+      "properties": {
+        "category": {
+          "type": "string",
+          "enum": ["medical", "relational", "ethical"],
+          "description": "Category of outcome contribution"
+        },
+        "impact": {
+          "type": "string",
+          "enum": ["critical", "major", "moderate", "minor"],
+          "description": "Weight of this node in outcome evaluation"
+        },
+        "scoring_notes": {
+          "type": "string",
+          "description": "Notes about how this node should be scored"
+        }
+      }
+    },
+    "OutcomeEvaluation": {
+      "type": "object",
+      "description": "How the case is scored at resolution",
+      "required": ["tiers", "end_conditions"],
+      "properties": {
+        "tiers": {
+          "type": "array",
+          "description": "Outcome tiers from optimal to failure",
+          "items": {
+            "$ref": "#/$defs/OutcomeTier"
+          },
+          "minItems": 1
+        },
+        "harmful_actions": {
+          "type": "array",
+          "description": "Actions that harm the patient and incur penalties",
+          "items": {
+            "$ref": "#/$defs/HarmfulAction"
+          }
+        },
+        "end_conditions": {
+          "type": "array",
+          "description": "Conditions that can end the case",
+          "items": {
+            "$ref": "#/$defs/EndCondition"
+          },
+          "minItems": 1
+        }
+      }
+    },
+    "OutcomeTier": {
+      "type": "object",
+      "description": "A specific outcome tier (optimal, good, partial, failure)",
+      "required": ["tier", "narrative"],
+      "properties": {
+        "tier": {
+          "type": "string",
+          "enum": ["optimal", "good", "partial", "failure"],
+          "description": "Tier level"
+        },
+        "required_flags": {
+          "type": "array",
+          "description": "Flags that must be set for this tier",
+          "items": {
+            "type": "string"
+          }
+        },
+        "excluded_flags": {
+          "type": "array",
+          "description": "Flags that must NOT be set for this tier",
+          "items": {
+            "type": "string"
+          }
+        },
+        "time_constraints": {
+          "type": "array",
+          "description": "Time-based requirements for this tier",
+          "items": {
+            "$ref": "#/$defs/TimeConstraint"
+          }
+        },
+        "narrative": {
+          "type": "string",
+          "description": "End-of-case narrative for this tier"
+        }
+      }
+    },
+    "TimeConstraint": {
+      "type": "object",
+      "description": "A flag must be set before a certain time",
+      "required": ["flag", "before_minutes"],
+      "properties": {
+        "flag": {
+          "type": "string",
+          "description": "Flag that must be set"
+        },
+        "before_minutes": {
+          "type": "integer",
+          "description": "Time limit in minutes from case start",
+          "minimum": 0
+        }
+      }
+    },
+    "HarmfulAction": {
+      "type": "object",
+      "description": "An action that harms the patient",
+      "required": ["description", "flag", "penalty_note"],
+      "properties": {
+        "description": {
+          "type": "string",
+          "description": "What the harmful action was"
+        },
+        "flag": {
+          "type": "string",
+          "description": "Flag that indicates this harmful action was taken"
+        },
+        "penalty_note": {
+          "type": "string",
+          "description": "Explanation of the penalty or harm caused"
+        }
+      }
+    },
+    "EndCondition": {
+      "type": "object",
+      "description": "Condition that triggers case end",
+      "required": ["type", "description"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["node_activated", "time_elapsed", "flag_set", "all_critical_resolved"],
+          "description": "Type of end condition"
+        },
+        "target": {
+          "type": "string",
+          "description": "Target for the condition (node ID, flag name, etc.)"
+        },
+        "value": {
+          "description": "Value for the condition (time in minutes, etc.)"
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of what this end condition represents"
+        }
+      }
+    }
+  }
+}
