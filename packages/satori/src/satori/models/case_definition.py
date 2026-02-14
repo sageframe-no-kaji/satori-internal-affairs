@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class Difficulty(StrEnum):
@@ -389,6 +389,8 @@ class CaseDefinition(BaseModel):
 
     Defines the contract between Anamnesis (case generation) and Satori (case execution).
     """
+
+    model_config = ConfigDict(extra="ignore")
 
     id: UUID = Field(..., description="Unique identifier for this case")
     version: str = Field(..., pattern=r"^\d+\.\d+\.\d+$", description="Semantic version")

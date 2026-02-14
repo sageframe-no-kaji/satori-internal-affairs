@@ -464,13 +464,7 @@
         ]
       },
       "activation": {
-        "starts_active": true,
-        "on_activate": [
-          {
-            "type": "set_flag",
-            "target": "wrong_treatment_steroids"
-          }
-        ]
+        "starts_active": true
       },
       "reveal": {
         "action": "start_treatment",
@@ -494,6 +488,14 @@
         "heart_rate": 82,
         "blood_pressure_systolic": 128,
         "blood_pressure_diastolic": 82
+      },
+      "effects": {
+        "on_reveal": [
+          {
+            "type": "set_flag",
+            "target": "wrong_treatment_steroids"
+          }
+        ]
       },
       "outcome_weight": {
         "category": "medical",
@@ -701,6 +703,10 @@
           {
             "type": "set_flag",
             "target": "sunday_meals_known"
+          },
+          {
+            "type": "set_flag",
+            "target": "undercooked_pork_exposure"
           }
         ]
       },
