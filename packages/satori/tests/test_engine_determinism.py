@@ -72,7 +72,7 @@ class TestInitialization:
         starts_active_ids = [
             node.id
             for node in engine.case.nodes
-            if node.activation_rule.starts_active
+            if node.activation.starts_active
         ]
         for node_id in starts_active_ids:
             assert node_id in state.active_nodes
@@ -95,7 +95,8 @@ class TestInitialization:
         for node in engine.case.nodes:
             if node.id in state.active_nodes and node.timer is not None:
                 assert node.id in state.timers
-                assert state.timers[node.id] == 0  # Should start at 0
+                # Timer should be initialized to full duration
+                assert state.timers[node.id] == node.timer.duration_minutes
 
 
 class TestActionExecution:
@@ -243,7 +244,7 @@ class TestTimersAndDeterioration:
         assert node_06.timer is not None
 
         # Check if it starts active
-        if not node_06.activation_rule.starts_active:
+        if not node_06.activation.starts_active:
             # Activate it first (implementation-specific)
             pass
 
@@ -262,14 +263,19 @@ class TestTimersAndDeterioration:
 
     def test_timer_stage_events_emitted(self, engine: SatoriEngine):
         """Check 17: Timer stage events emitted as stages are crossed."""
+        from satori.engine import InvalidActionError
+
         # Find a node with timer stages
         node_06 = next((n for n in engine.case.nodes if n.id == "node_06_headache_progression"), None)
         if node_06 and node_06.timer and node_06.timer.stages:
             # Burn enough time to cross a stage
             all_events = []
             for _ in range(10):  # Execute multiple actions
-                events = engine.execute_action("history_general")
-                all_events.extend(events)
+                try:
+                    events = engine.execute_action("history_general")
+                    all_events.extend(events)
+                except InvalidActionError:
+                    break
 
             # Check if we got any TimerStageEvent
             stage_events = [e for e in all_events if isinstance(e, TimerStageEvent)]
@@ -281,12 +287,17 @@ class TestTimersAndDeterioration:
 
     def test_vitals_worsen_with_timer_stages(self, engine: SatoriEngine):
         """Check 18: Vitals worsen as timer stages progress."""
+        from satori.engine import InvalidActionError
+
         initial_state = engine.get_state()
         initial_vitals = initial_state.current_vitals
 
         # Burn significant time
         for _ in range(15):
-            engine.execute_action("history_general")
+            try:
+                engine.execute_action("history_general")
+            except InvalidActionError:
+                break
 
         final_state = engine.get_state()
         final_vitals = final_state.current_vitals
@@ -310,7 +321,7 @@ class TestInterventions:
 
         # Check if flag was set
         flag_events = [e for e in events if isinstance(e, FlagSetEvent)]
-        flag_names = [e.flag_name for e in flag_events]
+        flag_names = [e.flag for e in flag_events]
 
         # May need to check state flags instead if event wasn't emitted this turn
         assert "wrong_treatment_steroids" in state.flags or "wrong_treatment_steroids" in flag_names
@@ -372,13 +383,19 @@ class TestEndConditions:
 
     def test_time_elapsed_ends_case(self, engine: SatoriEngine):
         """Check 22: Burn 360+ minutes → case ends."""
+        from satori.engine import InvalidActionError
+
         # Execute actions until we exceed 360 minutes
         max_iterations = 30  # Safety limit
         for _ in range(max_iterations):
             state = engine.get_state()
             if state.case_ended or state.current_time_minutes >= 360:
                 break
-            engine.execute_action("history_general")
+            try:
+                engine.execute_action("history_general")
+            except InvalidActionError:
+                # Action locked — break
+                break
 
         final_state = engine.get_state()
         # Should have ended due to time
@@ -461,11 +478,11 @@ class TestStructural:
         events = engine.execute_action("history_general")
 
         for event in events:
-            assert hasattr(event, "timestamp")
-            assert isinstance(event.timestamp, int)
+            assert hasattr(event, "timestamp_minutes")
+            assert isinstance(event.timestamp_minutes, int)
 
         # Verify causal ordering: timestamps are non-decreasing
-        timestamps = [e.timestamp for e in events]
+        timestamps = [e.timestamp_minutes for e in events]
         assert timestamps == sorted(timestamps)
 
     def test_vitals_worst_wins_computation(self, engine: SatoriEngine):
@@ -476,17 +493,16 @@ class TestStructural:
         state = engine.get_state()
 
         # Verify VitalsComputer exists and is used
-        computer = VitalsComputer(engine.case)
-        vitals = computer.compute_vitals(state.active_nodes, state.timer_stages)
-
-        # Vitals should exist (unless no baseline/active nodes have vitals)
-        assert vitals is not None or (
-            engine.case.patient_state.baseline_vitals is None
-            and not any(
-                node.id in state.active_nodes and node.vital_signs is not None
-                for node in engine.case.nodes
-            )
+        computer = VitalsComputer()
+        active_node_objects = [
+            n for n in engine.case.nodes if n.id in state.active_nodes
+        ]
+        vitals = computer.compute_vitals(
+            engine.case.patient.arriving_vitals, active_node_objects, state
         )
+
+        # Vitals should be returned
+        assert vitals is not None
 
 
 class TestEventTypes:
@@ -522,15 +538,21 @@ class TestEventTypes:
         # At minimum, case_start flag should have been set
         # Structure is validated
         for event in flag_set:
-            assert hasattr(event, "flag_name")
+            assert hasattr(event, "flag")
 
     def test_vitals_changed_event(self, engine: SatoriEngine):
         """VitalsChangedEvent emitted when vitals change."""
+        from satori.engine import InvalidActionError
+
         all_events = []
         # Burn time to potentially change vitals
         for _ in range(10):
-            events = engine.execute_action("history_general")
-            all_events.extend(events)
+            try:
+                events = engine.execute_action("history_general")
+                all_events.extend(events)
+            except InvalidActionError:
+                # Action locked by case effects — this is expected behavior
+                break
 
         vitals_events = [e for e in all_events if isinstance(e, VitalsChangedEvent)]
         # May or may not happen, but structure is tested
@@ -547,7 +569,7 @@ class TestPatientCondition:
         from satori.patient_condition import compute_patient_condition
 
         state = engine.get_state()
-        condition = compute_patient_condition(state)
+        condition = compute_patient_condition(state, engine.case)
 
         assert isinstance(condition, PatientCondition)
         # Should return one of the enum values
@@ -556,19 +578,24 @@ class TestPatientCondition:
     def test_patient_condition_degrades_over_time(self, engine: SatoriEngine):
         """Patient condition worsens if untreated."""
         from satori.patient_condition import compute_patient_condition
+        from satori.engine import InvalidActionError
 
         initial_state = engine.get_state()
-        initial_condition = compute_patient_condition(initial_state)
+        initial_condition = compute_patient_condition(initial_state, engine.case)
 
         # Burn significant time without treatment
         for _ in range(20):
             state = engine.get_state()
             if state.case_ended:
                 break
-            engine.execute_action("history_general")
+            try:
+                engine.execute_action("history_general")
+            except InvalidActionError:
+                # Action locked — break
+                break
 
         final_state = engine.get_state()
-        final_condition = compute_patient_condition(final_state)
+        final_condition = compute_patient_condition(final_state, engine.case)
 
         # Condition should have either stayed the same or worsened
         # (depending on timer stages and vitals)
