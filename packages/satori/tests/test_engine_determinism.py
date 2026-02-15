@@ -223,30 +223,30 @@ class TestTimersAndDeterioration:
     """Acceptance checks 16-18: timer mechanics and deterioration."""
 
     def test_timer_advances_with_time(self, engine: SatoriEngine):
-        """Check 16: Burn time → node_06_headache_progression timer advances."""
-        # node_06 should have a timer if starts_active
-        # Find node_06
+        """Check 16: Activate node_06 via history_general (sets headaches_two_weeks flag), then timer counts down."""
         node_06 = next((n for n in engine.case.nodes if n.id == "node_06_headache_progression"), None)
         assert node_06 is not None
         assert node_06.timer is not None
 
-        # Check if it starts active
-        if not node_06.activation.starts_active:
-            # Activate it first (implementation-specific)
-            pass
+        # node_06 activates when headaches_two_weeks flag is set.
+        # That flag is set by node_01's on_reveal, triggered by history_general.
+        engine.execute_action("history_general")
+        state_after_reveal = engine.get_state()
+        assert "headaches_two_weeks" in state_after_reveal.flags
+        assert "node_06_headache_progression" in state_after_reveal.active_nodes
+        assert "node_06_headache_progression" in state_after_reveal.timers
+        initial_remaining = state_after_reveal.timers["node_06_headache_progression"]
+        assert initial_remaining == node_06.timer.duration_minutes
 
-        initial_state = engine.get_state()
-        if "node_06_headache_progression" in initial_state.timers:
-            initial_timer = initial_state.timers["node_06_headache_progression"]
+        # Advance time by another 15 minutes
+        engine.execute_action("physical_exam_general")
 
-            # Advance time
-            engine.execute_action("history_general")  # +15 minutes
-
-            new_state = engine.get_state()
-            new_timer = new_state.timers.get("node_06_headache_progression", 0)
-
-            # Timer should have advanced
-            assert new_timer > initial_timer
+        new_state = engine.get_state()
+        new_remaining = new_state.timers.get("node_06_headache_progression")
+        assert new_remaining is not None
+        # Timer counts DOWN, so remaining should decrease
+        assert new_remaining < initial_remaining
+        assert new_remaining == initial_remaining - 15
 
     def test_timer_stage_events_emitted(self, engine: SatoriEngine):
         """Check 17: Timer stage events emitted as stages are crossed."""
@@ -314,90 +314,148 @@ class TestInterventions:
         assert "wrong_treatment_steroids" in state.flags or "wrong_treatment_steroids" in flag_names
 
     def test_steroids_modify_timer(self, engine: SatoriEngine):
-        """Check 20: Steroids modify node_06 timer (accelerate by -60 minutes)."""
-        # This is implementation-specific. We'd need to:
-        # 1. Check initial timer value
-        # 2. Apply steroids
-        # 3. Check timer was modified
+        """Check 20: Steroids trigger crisis chain → patient death.
 
-        # Since this depends on case structure, we'll do a basic check
+        node_08 has a 60-minute timer with on_expire that fires:
+        - set_flag: steroid_rebound
+        - modify_timer: node_06_headache_progression, value: -60
 
+        However, with this case's timing, giving steroids triggers
+        wrong_treatment_steroids flag → crisis chain → seizure →
+        patient death before node_08's timer expires. This verifies
+        the cascade is working correctly.
+        """
+        # Activate node_06 by revealing node_01 (sets headaches_two_weeks)
+        engine.execute_action("history_general")
+
+        state_before = engine.get_state()
+        assert "node_06_headache_progression" in state_before.timers
+
+        # Prescribe steroids — triggers the crisis chain
         engine.execute_action("start_treatment:steroids")
+        state_after_steroids = engine.get_state()
+        assert "wrong_treatment_steroids" in state_after_steroids.flags
 
-        # Timer should be modified (likely decreased/accelerated)
-        # The exact logic depends on the MODIFY_TIMER effect in the case
-        # This is a structural test - the mechanism exists
-        assert True  # Placeholder - real test needs case-specific knowledge
+        # Burn time — the crisis chain leads to patient death
+        for _ in range(4):
+            state = engine.get_state()
+            if state.case_ended:
+                break
+            try:
+                engine.execute_action("physical_exam_general")
+            except InvalidActionError:
+                break
+
+        final_state = engine.get_state()
+        # The crisis chain should end the case (patient death)
+        assert final_state.case_ended is True
+        assert "patient_death" in final_state.flags or "node_11_patient_death" in final_state.active_nodes
 
 
 class TestEndConditions:
     """Acceptance checks 21-23: case ending and outcome evaluation."""
 
-    def test_optimal_path_ends_case(self, engine: SatoriEngine):
-        """Check 21: Optimal path → case ends with appropriate outcome."""
-        # Execute an optimal sequence:
-        # 1. History
-        # 2. Physical exam
-        # 3. Labs
-        # 4. Imaging
-        # 5. Correct treatment
+    def test_correct_treatment_ends_case(self, engine: SatoriEngine):
+        """Check 21: Setting correct_treatment_started flag → case ends.
 
-        optimal_actions = [
-            "history_general",
-            "history_focused:dietary",
-            "physical_exam_focused:neuro",
-            "order_labs:cbc",
-            "order_imaging:brain_ct",
-        ]
-
-        for action in optimal_actions:
-            engine.execute_action(action)
+        The end_conditions include: flag_set correct_treatment_started.
+        We need to get enough flags to activate node_10 (correct treatment)
+        and then prescribe albendazole.
+        """
+        # Build up the diagnostic path:
+        # 1. Get dietary history → undercooked_pork_exposure
+        engine.execute_action("history_focused:dietary")
+        # 2. Neuro exam → lesion_found
+        engine.execute_action("physical_exam_focused:neuro")
+        # 3. Labs for eosinophilia
+        engine.execute_action("order_labs:cbc")
+        # 4. Burn time to get lab results (45 min delay)
+        for _ in range(4):
             state = engine.get_state()
             if state.case_ended:
                 break
+            engine.execute_action("history_general")
 
-        # The exact optimal treatment depends on case definition
-        # We'll test that the mechanism works
+        # 5. Order brain CT imaging
+        state = engine.get_state()
+        if not state.case_ended:
+            engine.execute_action("order_imaging:brain_ct")
+            # Burn time for imaging results
+            for _ in range(4):
+                state = engine.get_state()
+                if state.case_ended:
+                    break
+                engine.execute_action("history_general")
+
+        # 6. Start correct treatment
+        state = engine.get_state()
+        if not state.case_ended:
+            engine.execute_action("start_treatment:albendazole")
+
+        final_state = engine.get_state()
+        # Case should have ended with correct_treatment_started flag triggering end
+        assert final_state.case_ended is True
+        assert final_state.outcome_tier is not None
+        assert "correct_treatment_started" in final_state.flags
 
     def test_time_elapsed_ends_case(self, engine: SatoriEngine):
-        """Check 22: Burn 360+ minutes → case ends."""
-        from satori.engine import InvalidActionError
-
-        # Execute actions until we exceed 360 minutes
-        max_iterations = 30  # Safety limit
-        for _ in range(max_iterations):
+        """Check 22: Burn 360+ minutes → case ends due to time limit."""
+        # Cycle through multiple action types to avoid locks
+        burn_actions = [
+            "history_general", "physical_exam_general", "order_labs:cbc",
+            "order_imaging:brain_ct", "consult", "physical_exam_focused:neuro",
+            "history_focused:dietary", "history_focused:neurological",
+            "emergency_intervention",
+        ]
+        action_idx = 0
+        for _ in range(50):
             state = engine.get_state()
-            if state.case_ended or state.current_time_minutes >= 360:
+            if state.case_ended:
                 break
-            try:
-                engine.execute_action("history_general")
-            except InvalidActionError:
-                # Action locked — break
+            tried = 0
+            while tried < len(burn_actions):
+                try:
+                    engine.execute_action(burn_actions[action_idx % len(burn_actions)])
+                    action_idx += 1
+                    break
+                except InvalidActionError:
+                    action_idx += 1
+                    tried += 1
+            else:
+                break  # all actions locked
+
+        final_state = engine.get_state()
+        assert final_state.case_ended is True
+
+    def test_time_expired_outcome_is_failure(self, engine: SatoriEngine):
+        """Check 23: Burning out the clock with no treatment → failure tier."""
+        burn_actions = [
+            "history_general", "physical_exam_general", "consult",
+            "order_labs:cbc", "order_imaging:brain_ct",
+            "physical_exam_focused:neuro", "history_focused:dietary",
+            "emergency_intervention",
+        ]
+        action_idx = 0
+        for _ in range(50):
+            state = engine.get_state()
+            if state.case_ended:
+                break
+            tried = 0
+            while tried < len(burn_actions):
+                try:
+                    engine.execute_action(burn_actions[action_idx % len(burn_actions)])
+                    action_idx += 1
+                    break
+                except InvalidActionError:
+                    action_idx += 1
+                    tried += 1
+            else:
                 break
 
         final_state = engine.get_state()
-        # Should have ended due to time
-        if final_state.current_time_minutes >= 360:
-            # Check end condition
-            # May or may not have ended depending on case definition
-            pass
-
-    def test_outcome_tier_evaluation(self, engine: SatoriEngine):
-        """Check 23: Outcome tier requires specific flags and time constraints."""
-        # This tests the logic, not a specific outcome
-        # We verify the engine can evaluate outcomes
-
-        # Execute some actions to set flags
-        engine.execute_action("history_general")
-        engine.execute_action("order_labs:cbc")
-
-        state = engine.get_state()
-
-        # The outcome tier is evaluated when case ends
-        # We can't force a specific tier without knowing the full optimal path
-        # But we verify the structure exists
-        assert hasattr(state, "outcome_tier")
-        assert state.outcome_tier is None or isinstance(state.outcome_tier, str)
+        assert final_state.case_ended is True
+        # Without correct treatment, outcome should be failure (or partial at best)
+        assert final_state.outcome_tier in ("failure", "partial")
 
 
 class TestStructural:
@@ -547,26 +605,46 @@ class TestPatientCondition:
         assert condition in PatientCondition
 
     def test_patient_condition_degrades_over_time(self, engine: SatoriEngine):
-        """Patient condition worsens if untreated."""
-        from satori.engine import InvalidActionError
+        """Patient condition worsens from stable to at least decompensating if untreated."""
         from satori.patient_condition import compute_patient_condition
 
+        # First activate node_06's timer via dietary history
+        engine.execute_action("history_focused:dietary")
 
-        # Burn significant time without treatment
+        initial_condition = compute_patient_condition(engine.get_state(), engine.case)
+        assert initial_condition in (PatientCondition.COMPENSATING, PatientCondition.STABLE)
+
+        # Burn enough time to cross timer stages (node_06 headache progression)
+        # Stages are at 60, 120, 150 minutes in the example case
+        burn_actions = [
+            "history_general", "physical_exam_general", "consult",
+            "order_labs:cbc", "order_imaging:brain_ct",
+            "physical_exam_focused:neuro", "emergency_intervention",
+        ]
+        action_idx = 0
         for _ in range(20):
             state = engine.get_state()
             if state.case_ended:
                 break
-            try:
-                engine.execute_action("history_general")
-            except InvalidActionError:
-                # Action locked — break
+            tried = 0
+            while tried < len(burn_actions):
+                try:
+                    engine.execute_action(burn_actions[action_idx % len(burn_actions)])
+                    action_idx += 1
+                    break
+                except InvalidActionError:
+                    action_idx += 1
+                    tried += 1
+            else:
                 break
 
         final_state = engine.get_state()
         final_condition = compute_patient_condition(final_state, engine.case)
 
-        # Condition should have either stayed the same or worsened
-        # (depending on timer stages and vitals)
-        # This is a structural test - the mechanism exists
-        assert final_condition in PatientCondition
+        # After significant time untreated, condition should have worsened
+        # Possible values: DECOMPENSATING, CRITICAL, or DEAD
+        assert final_condition in (
+            PatientCondition.DECOMPENSATING,
+            PatientCondition.CRITICAL,
+            PatientCondition.DEAD,
+        )
