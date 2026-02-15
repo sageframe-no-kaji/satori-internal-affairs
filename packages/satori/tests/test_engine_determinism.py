@@ -7,6 +7,7 @@ Maria Santos neurocysticercosis case.
 
 import json
 from pathlib import Path
+from uuid import uuid4
 
 import pytest
 
@@ -20,7 +21,7 @@ from satori.events import (
     VitalsChangedEvent,
 )
 from satori.game_state import GameState
-from satori.models.case_definition import CaseDefinition
+from satori.models.case_definition import CaseDefinition, VitalSigns
 from satori.patient_condition import PatientCondition
 
 # ----------------------------------------------------------------------------
@@ -478,17 +479,24 @@ class TestStructural:
         from dataclasses import FrozenInstanceError
 
         state = GameState(
-            case_id="test",
+            case_id=uuid4(),
             current_time_minutes=0,
-            flags=set(),
-            active_nodes=set(),
-            revealed_nodes=set(),
-            expired_nodes=set(),
+            flags=frozenset(),
+            active_nodes=frozenset(),
+            revealed_nodes=frozenset(),
+            expired_nodes=frozenset(),
             pending_reveals={},
             timers={},
             timer_stages={},
-            current_vitals=None,
-            available_actions=set(),
+            current_vitals=VitalSigns(
+                heart_rate=None,
+                blood_pressure_systolic=None,
+                blood_pressure_diastolic=None,
+                temperature=None,
+                respiratory_rate=None,
+                o2_saturation=None,
+            ),
+            available_actions=frozenset(),
             case_ended=False,
             outcome_tier=None,
             end_reason=None,
@@ -496,7 +504,7 @@ class TestStructural:
 
         # Try to modify - should raise FrozenInstanceError
         with pytest.raises(FrozenInstanceError):
-            state.current_time_minutes = 100
+            state.current_time_minutes = 100  # type: ignore[misc]
 
     def test_all_events_are_typed_subclasses(self, engine: SatoriEngine):
         """Check 26: All events are typed subclasses of Event."""
