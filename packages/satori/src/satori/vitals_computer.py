@@ -21,9 +21,7 @@ class VitalsComputer:
         "o2_saturation": (95, 100),
     }
 
-    def compute_vitals(
-        self, baseline: VitalSigns, active_nodes: list[Node], state: GameState
-    ) -> VitalSigns:
+    def compute_vitals(self, baseline: VitalSigns, active_nodes: list[Node], state: GameState) -> VitalSigns:
         """Compute current vitals using worst-wins algorithm.
 
         Sources of vitals (in addition to baseline):
@@ -55,34 +53,18 @@ class VitalsComputer:
             Computed VitalSigns with worst values
         """
         # Collect all values for each vital
-        hr_values = self._collect_vital_values(
-            "heart_rate", baseline, active_nodes, state
-        )
-        bp_sys_values = self._collect_vital_values(
-            "blood_pressure_systolic", baseline, active_nodes, state
-        )
-        bp_dia_values = self._collect_vital_values(
-            "blood_pressure_diastolic", baseline, active_nodes, state
-        )
-        temp_values = self._collect_vital_values(
-            "temperature", baseline, active_nodes, state
-        )
-        rr_values = self._collect_vital_values(
-            "respiratory_rate", baseline, active_nodes, state
-        )
-        o2_values = self._collect_vital_values(
-            "o2_saturation", baseline, active_nodes, state
-        )
+        hr_values = self._collect_vital_values("heart_rate", baseline, active_nodes, state)
+        bp_sys_values = self._collect_vital_values("blood_pressure_systolic", baseline, active_nodes, state)
+        bp_dia_values = self._collect_vital_values("blood_pressure_diastolic", baseline, active_nodes, state)
+        temp_values = self._collect_vital_values("temperature", baseline, active_nodes, state)
+        rr_values = self._collect_vital_values("respiratory_rate", baseline, active_nodes, state)
+        o2_values = self._collect_vital_values("o2_saturation", baseline, active_nodes, state)
 
         # Take worst for each
         return VitalSigns(
             heart_rate=self._worst_value("heart_rate", hr_values),
-            blood_pressure_systolic=self._worst_value(
-                "blood_pressure_systolic", bp_sys_values
-            ),
-            blood_pressure_diastolic=self._worst_value(
-                "blood_pressure_diastolic", bp_dia_values
-            ),
+            blood_pressure_systolic=self._worst_value("blood_pressure_systolic", bp_sys_values),
+            blood_pressure_diastolic=self._worst_value("blood_pressure_diastolic", bp_dia_values),
             temperature=self._worst_value("temperature", temp_values),
             respiratory_rate=self._worst_value("respiratory_rate", rr_values),
             o2_saturation=self._worst_value("o2_saturation", o2_values),
@@ -121,11 +103,7 @@ class VitalsComputer:
                     values.append(float(val))
 
             # Timer-stage vitals (if node has a timer and has reached stages)
-            if (
-                node.timer
-                and node.timer.stages
-                and node.id in state.timer_stages
-            ):
+            if node.timer and node.timer.stages and node.id in state.timer_stages:
                 current_stage_idx = state.timer_stages[node.id]
                 # Collect vitals from all stages that have been reached
                 # (stages are indexed by at_minutes, we store highest reached index)

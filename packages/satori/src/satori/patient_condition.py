@@ -21,9 +21,7 @@ class PatientCondition(StrEnum):
     RECOVERED = "recovered"
 
 
-def compute_patient_condition(
-    state: GameState, case: CaseDefinition
-) -> PatientCondition:
+def compute_patient_condition(state: GameState, case: CaseDefinition) -> PatientCondition:
     """Derive patient condition from current state.
 
     This is a READ-ONLY convenience for frontend and narration.
@@ -65,18 +63,11 @@ def compute_patient_condition(
     vitals = state.current_vitals
     if vitals.o2_saturation is not None and vitals.o2_saturation < 88:
         return PatientCondition.CRITICAL
-    if vitals.heart_rate is not None and (
-        vitals.heart_rate > 150 or vitals.heart_rate < 40
-    ):
+    if vitals.heart_rate is not None and (vitals.heart_rate > 150 or vitals.heart_rate < 40):
         return PatientCondition.CRITICAL
-    if (
-        vitals.blood_pressure_systolic is not None
-        and vitals.blood_pressure_systolic < 90
-    ):
+    if vitals.blood_pressure_systolic is not None and vitals.blood_pressure_systolic < 90:
         return PatientCondition.CRITICAL
-    if vitals.temperature is not None and (
-        vitals.temperature > 104.0 or vitals.temperature < 95.0
-    ):
+    if vitals.temperature is not None and (vitals.temperature > 104.0 or vitals.temperature < 95.0):
         return PatientCondition.CRITICAL
 
     # Check for progression nodes with timers
@@ -87,12 +78,7 @@ def compute_patient_condition(
     progression_timers = []
     for node_id in state.active_nodes:
         node = node_map.get(node_id)
-        if (
-            node
-            and node.type == "progression"
-            and node_id in state.timers
-            and node.timer
-        ):
+        if node and node.type == "progression" and node_id in state.timers and node.timer:
             remaining = state.timers[node_id]
             duration = node.timer.duration_minutes
             elapsed_pct = ((duration - remaining) / duration) * 100

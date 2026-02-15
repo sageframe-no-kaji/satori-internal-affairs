@@ -43,9 +43,7 @@ class EffectExecutor:
         events: list[Event] = []
 
         for effect in effects:
-            new_state, effect_events = self._apply_single_effect(
-                effect, new_state, case
-            )
+            new_state, effect_events = self._apply_single_effect(effect, new_state, case)
             events.extend(effect_events)
 
         return new_state, events
@@ -109,15 +107,11 @@ class EffectExecutor:
         new_flags = set(state.flags) | {flag}
         new_state = replace(state, flags=frozenset(new_flags))
 
-        events = [
-            FlagSetEvent(timestamp_minutes=state.current_time_minutes, flag=flag)
-        ]
+        events = [FlagSetEvent(timestamp_minutes=state.current_time_minutes, flag=flag)]
 
         return new_state, events
 
-    def _clear_flag(
-        self, flag: str, state: GameState
-    ) -> tuple[GameState, list[Event]]:
+    def _clear_flag(self, flag: str, state: GameState) -> tuple[GameState, list[Event]]:
         """Remove flag from state.flags.
 
         Emit FlagClearedEvent.
@@ -136,15 +130,11 @@ class EffectExecutor:
         new_flags = set(state.flags) - {flag}
         new_state = replace(state, flags=frozenset(new_flags))
 
-        events = [
-            FlagClearedEvent(timestamp_minutes=state.current_time_minutes, flag=flag)
-        ]
+        events = [FlagClearedEvent(timestamp_minutes=state.current_time_minutes, flag=flag)]
 
         return new_state, events
 
-    def _activate_node(
-        self, node_id: str, state: GameState, case: CaseDefinition
-    ) -> tuple[GameState, list[Event]]:
+    def _activate_node(self, node_id: str, state: GameState, case: CaseDefinition) -> tuple[GameState, list[Event]]:
         """Add node_id to active_nodes.
 
         If the node has a timer, initialize it in state.timers.
@@ -199,9 +189,7 @@ class EffectExecutor:
 
         return new_state, events
 
-    def _deactivate_node(
-        self, node_id: str, state: GameState
-    ) -> tuple[GameState, list[Event]]:
+    def _deactivate_node(self, node_id: str, state: GameState) -> tuple[GameState, list[Event]]:
         """Remove node_id from active_nodes.
 
         Clean up its timer if present.
@@ -233,9 +221,7 @@ class EffectExecutor:
         # No event for deactivation (not in spec)
         return new_state, []
 
-    def _modify_timer(
-        self, node_id: str, value: int, state: GameState
-    ) -> tuple[GameState, list[Event]]:
+    def _modify_timer(self, node_id: str, value: int, state: GameState) -> tuple[GameState, list[Event]]:
         """Add value to the timer for node_id.
 
         Positive value = extend timer (more time).
@@ -269,9 +255,7 @@ class EffectExecutor:
         # No event for timer modification (implicit in next timer advance)
         return new_state, []
 
-    def _unlock_action(
-        self, action: str, state: GameState
-    ) -> tuple[GameState, list[Event]]:
+    def _unlock_action(self, action: str, state: GameState) -> tuple[GameState, list[Event]]:
         """Add action to available_actions.
 
         Emit ActionUnlockedEvent.
@@ -290,17 +274,11 @@ class EffectExecutor:
         new_actions = set(state.available_actions) | {action}
         new_state = replace(state, available_actions=frozenset(new_actions))
 
-        events = [
-            ActionUnlockedEvent(
-                timestamp_minutes=state.current_time_minutes, action=action
-            )
-        ]
+        events = [ActionUnlockedEvent(timestamp_minutes=state.current_time_minutes, action=action)]
 
         return new_state, events
 
-    def _lock_action(
-        self, action: str, state: GameState
-    ) -> tuple[GameState, list[Event]]:
+    def _lock_action(self, action: str, state: GameState) -> tuple[GameState, list[Event]]:
         """Remove action from available_actions.
 
         Emit ActionLockedEvent.
@@ -319,17 +297,11 @@ class EffectExecutor:
         new_actions = set(state.available_actions) - {action}
         new_state = replace(state, available_actions=frozenset(new_actions))
 
-        events = [
-            ActionLockedEvent(
-                timestamp_minutes=state.current_time_minutes, action=action
-            )
-        ]
+        events = [ActionLockedEvent(timestamp_minutes=state.current_time_minutes, action=action)]
 
         return new_state, events
 
-    def _override_vitals(
-        self, effect: Effect, state: GameState
-    ) -> tuple[GameState, list[Event]]:
+    def _override_vitals(self, effect: Effect, state: GameState) -> tuple[GameState, list[Event]]:
         """Override specific vital signs directly.
 
         effect.target = vital name (e.g., "heart_rate")
@@ -366,9 +338,7 @@ class EffectExecutor:
         # Vitals change event will be emitted by engine's _recompute_vitals
         return new_state, []
 
-    def _end_case(
-        self, outcome_tier: str, state: GameState
-    ) -> tuple[GameState, list[Event]]:
+    def _end_case(self, outcome_tier: str, state: GameState) -> tuple[GameState, list[Event]]:
         """End the case with the given outcome tier.
 
         Set case_ended=True, outcome_tier, and emit CaseEndedEvent.
@@ -395,7 +365,7 @@ class EffectExecutor:
             CaseEndedEvent(
                 timestamp_minutes=state.current_time_minutes,
                 outcome_tier=outcome_tier,
-                end_reason=f"Triggered by END_CASE effect",
+                end_reason="Triggered by END_CASE effect",
             )
         ]
 

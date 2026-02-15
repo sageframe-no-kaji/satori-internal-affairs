@@ -43,7 +43,6 @@ class TimeAdvancedEvent(Event):
     cause: str  # the action that caused time to advance
 
 
-
 @dataclass(frozen=True)
 class NodeActivatedEvent(Event):
     """A node became active in the simulation."""

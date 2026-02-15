@@ -5,7 +5,6 @@ vitals computation, end conditions, and structural invariants using the real
 Maria Santos neurocysticercosis case.
 """
 
-import copy
 import json
 from pathlib import Path
 
@@ -13,16 +12,9 @@ import pytest
 
 from satori.engine import InvalidActionError, SatoriEngine
 from satori.events import (
-    ActionLockedEvent,
-    ActionUnlockedEvent,
-    CaseEndedEvent,
     Event,
-    FlagClearedEvent,
     FlagSetEvent,
-    NodeActivatedEvent,
-    NodeExpiredEvent,
     NodeRevealedEvent,
-    PendingRevealStartedEvent,
     TimeAdvancedEvent,
     TimerStageEvent,
     VitalsChangedEvent,
@@ -30,7 +22,6 @@ from satori.events import (
 from satori.game_state import GameState
 from satori.models.case_definition import CaseDefinition
 from satori.patient_condition import PatientCondition
-
 
 # ----------------------------------------------------------------------------
 # FIXTURES
@@ -41,7 +32,7 @@ from satori.patient_condition import PatientCondition
 def maria_santos_case() -> CaseDefinition:
     """Load the Maria Santos neurocysticercosis case."""
     case_path = Path(__file__).parents[3] / "cases" / "example-neurocysticercosis.json"
-    with open(case_path, "r", encoding="utf-8") as f:
+    with open(case_path, encoding="utf-8") as f:
         data = json.load(f)
     return CaseDefinition.model_validate(data)
 
@@ -69,11 +60,7 @@ class TestInitialization:
         """Check 2: Nodes with starts_active=True are in active_nodes."""
         state = engine.get_state()
         # Identify which nodes have starts_active=True
-        starts_active_ids = [
-            node.id
-            for node in engine.case.nodes
-            if node.activation.starts_active
-        ]
+        starts_active_ids = [node.id for node in engine.case.nodes if node.activation.starts_active]
         for node_id in starts_active_ids:
             assert node_id in state.active_nodes
 
@@ -144,7 +131,7 @@ class TestDelayedReveals:
 
     def test_cbc_not_immediately_revealed(self, engine: SatoriEngine):
         """Check 10: order_labs:cbc → node_04 NOT in revealed_nodes immediately."""
-        events = engine.execute_action("order_labs:cbc")
+        engine.execute_action("order_labs:cbc")
         state = engine.get_state()
 
         # node_04_lab_eosinophilia should NOT be revealed yet
@@ -152,7 +139,7 @@ class TestDelayedReveals:
 
     def test_cbc_in_pending_reveals(self, engine: SatoriEngine):
         """Check 11: order_labs:cbc → node_04 IS in pending_reveals."""
-        events = engine.execute_action("order_labs:cbc")
+        engine.execute_action("order_labs:cbc")
         state = engine.get_state()
 
         # Should be in pending reveals
@@ -208,7 +195,7 @@ class TestDeterminism:
         # Events should be identical (compare lengths and types at minimum)
         assert len(events1) == len(events2)
         for e1, e2 in zip(events1, events2):
-            assert type(e1) == type(e2)
+            assert type(e1) is type(e2)
             assert e1 == e2
 
     def test_different_paths_different_outcomes(self, maria_santos_case: CaseDefinition):
@@ -334,18 +321,11 @@ class TestInterventions:
         # 3. Check timer was modified
 
         # Since this depends on case structure, we'll do a basic check
-        initial_state = engine.get_state()
-        initial_timer = initial_state.timers.get("node_06_headache_progression", 0)
 
-        events = engine.execute_action("start_treatment:steroids")
-
-        final_state = engine.get_state()
-        final_timer = final_state.timers.get("node_06_headache_progression", initial_timer)
+        engine.execute_action("start_treatment:steroids")
 
         # Timer should be modified (likely decreased/accelerated)
         # The exact logic depends on the MODIFY_TIMER effect in the case
-        # We check that timer changed OR that a modification happened
-        modify_effects = [e for e in events if "timer" in str(type(e)).lower()]
         # This is a structural test - the mechanism exists
         assert True  # Placeholder - real test needs case-specific knowledge
 
@@ -371,13 +351,11 @@ class TestEndConditions:
         ]
 
         for action in optimal_actions:
-            events = engine.execute_action(action)
+            engine.execute_action(action)
             state = engine.get_state()
             if state.case_ended:
                 break
 
-        # Check if treatment action exists
-        available = engine.get_available_actions()
         # The exact optimal treatment depends on case definition
         # We'll test that the mechanism works
 
@@ -441,8 +419,6 @@ class TestStructural:
         """Check 25: GameState is truly immutable (frozen dataclass)."""
         from dataclasses import FrozenInstanceError
 
-        from satori.game_state import GameState
-
         state = GameState(
             case_id="test",
             current_time_minutes=0,
@@ -471,7 +447,7 @@ class TestStructural:
         for event in events:
             assert isinstance(event, Event)
             # Verify it's a specific subclass, not just Event
-            assert type(event) != Event
+            assert type(event) is not Event
 
     def test_all_events_have_timestamps_and_ordering(self, engine: SatoriEngine):
         """Check 27: All events have timestamps and causal ordering."""
@@ -494,12 +470,8 @@ class TestStructural:
 
         # Verify VitalsComputer exists and is used
         computer = VitalsComputer()
-        active_node_objects = [
-            n for n in engine.case.nodes if n.id in state.active_nodes
-        ]
-        vitals = computer.compute_vitals(
-            engine.case.patient.arriving_vitals, active_node_objects, state
-        )
+        active_node_objects = [n for n in engine.case.nodes if n.id in state.active_nodes]
+        vitals = computer.compute_vitals(engine.case.patient.arriving_vitals, active_node_objects, state)
 
         # Vitals should be returned
         assert vitals is not None
@@ -533,7 +505,6 @@ class TestEventTypes:
 
         # Check if we got flag events
         flag_set = [e for e in all_events if isinstance(e, FlagSetEvent)]
-        flag_cleared = [e for e in all_events if isinstance(e, FlagClearedEvent)]
 
         # At minimum, case_start flag should have been set
         # Structure is validated
@@ -577,11 +548,9 @@ class TestPatientCondition:
 
     def test_patient_condition_degrades_over_time(self, engine: SatoriEngine):
         """Patient condition worsens if untreated."""
-        from satori.patient_condition import compute_patient_condition
         from satori.engine import InvalidActionError
+        from satori.patient_condition import compute_patient_condition
 
-        initial_state = engine.get_state()
-        initial_condition = compute_patient_condition(initial_state, engine.case)
 
         # Burn significant time without treatment
         for _ in range(20):

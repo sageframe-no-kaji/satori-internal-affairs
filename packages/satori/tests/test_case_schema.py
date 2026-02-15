@@ -218,14 +218,16 @@ def test_patient_has_baseline_vitals() -> None:
 
     vitals = case.patient.arriving_vitals
     # At least one vital should be set
-    vital_set = any([
-        vitals.heart_rate is not None,
-        vitals.blood_pressure_systolic is not None,
-        vitals.blood_pressure_diastolic is not None,
-        vitals.temperature is not None,
-        vitals.respiratory_rate is not None,
-        vitals.o2_saturation is not None,
-    ])
+    vital_set = any(
+        [
+            vitals.heart_rate is not None,
+            vitals.blood_pressure_systolic is not None,
+            vitals.blood_pressure_diastolic is not None,
+            vitals.temperature is not None,
+            vitals.respiratory_rate is not None,
+            vitals.o2_saturation is not None,
+        ]
+    )
     assert vital_set, "No baseline vitals are set"
 
 

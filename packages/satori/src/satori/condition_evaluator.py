@@ -17,9 +17,7 @@ from satori.models.case_definition import (
 class ConditionEvaluator:
     """Evaluates activation, reveal, and end conditions against game state."""
 
-    def evaluate_activation_rule(
-        self, rule: ActivationRule, state: GameState
-    ) -> bool:
+    def evaluate_activation_rule(self, rule: ActivationRule, state: GameState) -> bool:
         """Evaluate if activation rule is satisfied.
 
         OR-of-ANDs logic:
@@ -39,10 +37,7 @@ class ConditionEvaluator:
         if rule.paths is None:
             return False
 
-        return any(
-            all(self._evaluate_condition(cond, state) for cond in path.conditions)
-            for path in rule.paths
-        )
+        return any(all(self._evaluate_condition(cond, state) for cond in path.conditions) for path in rule.paths)
 
     def evaluate_reveal_rule(
         self,
@@ -122,9 +117,7 @@ class ConditionEvaluator:
             case _:
                 raise ValueError(f"Unknown condition type: {condition.type}")
 
-    def _compare(
-        self, actual: float, threshold: float, comp: Comparator
-    ) -> bool:
+    def _compare(self, actual: float, threshold: float, comp: Comparator) -> bool:
         """Apply comparator to two values.
 
         Args:
@@ -147,9 +140,7 @@ class ConditionEvaluator:
             case Comparator.EQ:
                 return actual == threshold
 
-    def _evaluate_vital_threshold(
-        self, condition: Condition, state: GameState
-    ) -> bool:
+    def _evaluate_vital_threshold(self, condition: Condition, state: GameState) -> bool:
         """Evaluate a vital threshold condition.
 
         condition.target = vital name (e.g., "heart_rate", "o2_saturation")
@@ -166,6 +157,4 @@ class ConditionEvaluator:
         vital_value = getattr(state.current_vitals, condition.target, None)
         if vital_value is None:
             return False
-        return self._compare(
-            vital_value, condition.value, condition.comparator or Comparator.GTE
-        )
+        return self._compare(vital_value, condition.value, condition.comparator or Comparator.GTE)

@@ -10,7 +10,6 @@ from satori.events import (
     Event,
     NodeExpiredEvent,
     NodeRevealedEvent,
-    PendingRevealStartedEvent,
     TimerStageEvent,
 )
 from satori.game_state import GameState
@@ -213,9 +212,7 @@ class TimerManager:
 
         return new_state, events
 
-    def _check_pause_conditions(
-        self, pause_conditions: list[Condition] | None, state: GameState
-    ) -> bool:
+    def _check_pause_conditions(self, pause_conditions: list[Condition] | None, state: GameState) -> bool:
         """Check if timer is currently paused.
 
         Timer pauses when ALL pause conditions are satisfied.
@@ -230,7 +227,4 @@ class TimerManager:
         """
         if not pause_conditions:
             return False
-        return all(
-            self.condition_eval._evaluate_condition(c, state)
-            for c in pause_conditions
-        )
+        return all(self.condition_eval._evaluate_condition(c, state) for c in pause_conditions)
