@@ -77,7 +77,11 @@ class AnthropicCaseGenerator(CaseGenerator):
             if not response.content or len(response.content) == 0:
                 raise LLMResponseError("Anthropic returned empty content")
 
-            content = response.content[0].text
+            # Get first content block (should be TextBlock with JSON)
+            first_block = response.content[0]
+            if not hasattr(first_block, "text"):
+                raise LLMResponseError(f"Unexpected content block type: {type(first_block)}")
+            content = first_block.text
 
             # Parse JSON
             try:
