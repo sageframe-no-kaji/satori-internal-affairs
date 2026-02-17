@@ -339,7 +339,7 @@ class StateCheckers:
 
             new_state = replace(state, current_vitals=new_vitals)
 
-            events = [
+            events: list[Event] = [
                 VitalsChangedEvent(
                     timestamp_minutes=state.current_time_minutes,
                     old_vitals=old_vitals_dict,
@@ -390,10 +390,11 @@ class StateCheckers:
                         end_reason = f"Node {end_cond.target} activated"
                         break
                 case EndConditionType.TIME_ELAPSED:
-                    if state.current_time_minutes >= end_cond.value:
-                        end_triggered = True
-                        end_reason = f"Time limit reached ({end_cond.value} minutes)"
-                        break
+                    if end_cond.value is not None and isinstance(end_cond.value, int):
+                        if state.current_time_minutes >= end_cond.value:
+                            end_triggered = True
+                            end_reason = f"Time limit reached ({end_cond.value} minutes)"
+                            break
                 case EndConditionType.FLAG_SET:
                     if end_cond.target in state.flags:
                         end_triggered = True
@@ -448,7 +449,7 @@ class StateCheckers:
             end_reason=end_reason,
         )
 
-        events = [
+        events: list[Event] = [
             CaseEndedEvent(
                 timestamp_minutes=state.current_time_minutes,
                 outcome_tier=outcome_tier,

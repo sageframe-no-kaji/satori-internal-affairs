@@ -4,8 +4,8 @@ import json
 from pathlib import Path
 
 import pytest
-from jsonschema import validate
-from jsonschema.exceptions import ValidationError
+from jsonschema import validate  # type: ignore
+from jsonschema.exceptions import ValidationError  # type: ignore
 
 from llm_client import CaseSeed, MockCaseGenerator, ModelConfig, Provider
 

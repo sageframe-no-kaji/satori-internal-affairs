@@ -9,7 +9,7 @@ from dataclasses import replace
 from satori.action_parser import parse_action
 from satori.condition_evaluator import ConditionEvaluator
 from satori.effect_executor import EffectExecutor
-from satori.events import Event, NodeRevealedEvent, TimeAdvancedEvent
+from satori.events import Event, NodeExpiredEvent, NodeRevealedEvent, TimeAdvancedEvent, TimerStageEvent
 from satori.game_state import GameState
 from satori.models.case_definition import CaseDefinition, Node, NodeContent
 from satori.state_checkers import StateCheckers
@@ -263,7 +263,7 @@ class SatoriEngine:
         # Apply effects from expired timers
         # (timer_events includes NodeExpiredEvent, need to apply on_expire effects)
         for event in timer_events:
-            if hasattr(event, "node_id") and event.type == "node_expired":
+            if isinstance(event, NodeExpiredEvent):
                 node = self._node_map.get(event.node_id)
                 if node:
                     # Apply on_expire from timer
@@ -281,7 +281,7 @@ class SatoriEngine:
 
         # Apply effects from timer stages that were crossed
         for event in timer_events:
-            if hasattr(event, "node_id") and event.type == "timer_stage":
+            if isinstance(event, TimerStageEvent):
                 node = self._node_map.get(event.node_id)
                 if node and node.timer and node.timer.stages:
                     # Find the stage that was just crossed
@@ -349,7 +349,7 @@ class SatoriEngine:
 
         new_state = replace(self.state, current_time_minutes=new_time)
 
-        events = [
+        events: list[Event] = [
             TimeAdvancedEvent(
                 timestamp_minutes=new_time,
                 old_time=old_time,
