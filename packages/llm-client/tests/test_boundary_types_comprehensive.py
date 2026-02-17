@@ -41,9 +41,9 @@ def test_case_seed_with_all_optional_fields():
     assert seed.patient_age_range == (50, 70)
     assert seed.patient_sex == "M"
     assert seed.setting == "ICU"
-    assert len(seed.complications) == 1
-    assert len(seed.learning_objectives) == 2
-    assert len(seed.content_boundaries) == 1
+    assert seed.complications is not None and len(seed.complications) == 1
+    assert seed.learning_objectives is not None and len(seed.learning_objectives) == 2
+    assert seed.content_boundaries is not None and len(seed.content_boundaries) == 1
 
 
 def test_parsed_action_fields():

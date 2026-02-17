@@ -34,11 +34,16 @@ class AnthropicCaseGenerator(CaseGenerator):
         with open(schema_path) as f:
             self.schema_text = f.read()
 
+        # Validate api_key
+        if config.api_key is None:
+            raise ValueError("api_key required for AnthropicCaseGenerator")
+        api_key = config.api_key  # Type narrowing for mypy
+
         # Late import to avoid requiring anthropic for mock usage
         try:
-            import anthropic
+            import anthropic  # pyright: ignore[reportMissingImports]
 
-            self.client = anthropic.Anthropic(api_key=config.api_key)
+            self.client = anthropic.Anthropic(api_key=api_key)
         except ImportError as e:
             raise LLMProviderError(
                 "anthropic package not installed. Install with: pip install llm-client[anthropic]"

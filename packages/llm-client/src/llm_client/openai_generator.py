@@ -34,11 +34,16 @@ class OpenAICaseGenerator(CaseGenerator):
         with open(schema_path) as f:
             self.schema_text = f.read()
 
+        # Validate api_key
+        if config.api_key is None:
+            raise ValueError("api_key required for OpenAICaseGenerator")
+        api_key = config.api_key  # Type narrowing for mypy
+
         # Late import to avoid requiring openai for mock usage
         try:
-            import openai
+            import openai  # pyright: ignore[reportMissingImports]
 
-            self.client = openai.OpenAI(api_key=config.api_key)
+            self.client = openai.OpenAI(api_key=api_key)
         except ImportError as e:
             raise LLMProviderError(
                 "openai package not installed. Install with: pip install llm-client[openai]"
