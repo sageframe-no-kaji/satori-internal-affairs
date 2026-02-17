@@ -83,15 +83,14 @@ class TestOpenAIIntegration:
         # Verify we got a dict back
         assert isinstance(result, dict)
 
-        # Verify required top-level keys
+        # Verify required top-level keys (schema uses 'id' not 'case_id')
         required_keys = [
-            "case_id",
+            "id",
             "metadata",
             "patient",
-            "opening_presentation",
+            "ground_truth",
             "nodes",
             "action_costs",
-            "timer_stages",
         ]
 
         for key in required_keys:
@@ -161,15 +160,14 @@ class TestAnthropicIntegration:
         # Verify we got a dict back
         assert isinstance(result, dict)
 
-        # Verify required top-level keys
+        # Verify required top-level keys (schema uses 'id' not 'case_id')
         required_keys = [
-            "case_id",
+            "id",
             "metadata",
             "patient",
-            "opening_presentation",
+            "ground_truth",
             "nodes",
             "action_costs",
-            "timer_stages",
         ]
 
         for key in required_keys:
