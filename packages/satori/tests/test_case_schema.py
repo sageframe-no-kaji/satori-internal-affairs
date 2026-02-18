@@ -19,7 +19,7 @@ def test_example_case_loads() -> None:
     case = validate_case(EXAMPLE_CASE_PATH)
     assert isinstance(case, CaseDefinition)
     assert case.patient.name == "Maria Santos"
-    assert case.ground_truth.diagnosis == "Neurocysticercosis (tapeworm larvae in brain)"
+    assert case.ground_truth.diagnosis == "Neurocysticercosis (Taenia solium larvae in brain parenchyma)"
 
 
 def test_example_case_has_unique_node_ids() -> None:

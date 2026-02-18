@@ -1,23 +1,29 @@
 {
-  "_comment": "Hand-written example case for schema validation. Maria Santos / Neurocysticercosis case from example-case-node-architecture.md",
+  "_comment": "Hand-written example case v2 \u2014 Maria Santos / Neurocysticercosis. Redesigned for granular sub-action gating and narrative unlock chains.",
   "id": "550e8400-e29b-41d4-a716-446655440000",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "metadata": {
     "difficulty": "intermediate",
     "estimated_duration_minutes": 25,
     "simulated_duration_minutes": 360,
     "learning_objectives": [
-      "Don't anchor on the first imaging finding",
-      "Environmental and dietary history matters",
-      "Patient assumptions (cultural, religious) can mislead",
-      "A wrong treatment can cause real harm"
+      "Diagnostic anchoring on imaging is dangerous \u2014 follow the full clinical picture",
+      "Environmental and dietary history is as important as test results",
+      "Eosinophilia in a patient with a brain lesion should change your differential immediately",
+      "Steroids treat symptoms and destroy the patient \u2014 mechanism matters",
+      "Family members hold diagnostic keys that patients will not offer unprompted"
     ],
     "dramatic_tone": "medical_mystery",
     "content_boundaries": [
       "No graphic content",
       "Death is possible but not gratuitous"
     ],
-    "tags": ["neurology", "parasitic", "diagnostic_reasoning", "cultural_competence"]
+    "tags": [
+      "neurology",
+      "parasitic",
+      "diagnostic_reasoning",
+      "cultural_competence"
+    ]
   },
   "patient": {
     "name": "Maria Santos",
@@ -25,8 +31,8 @@
     "sex": "female",
     "setting": "Emergency Department",
     "chief_complaint": "Sudden speech difficulty and seizure at work",
-    "appearance": "Young woman, alert but frightened, slightly disheveled, wearing a waitress uniform. Wedding ring on left hand.",
-    "backstory": "Married for two years, working as a waitress. Has been eating Sunday dinners with mother-in-law who prepares traditional dishes including undercooked pork.",
+    "appearance": "Young woman, alert but frightened, slightly disheveled, wearing a waitress uniform. Wedding ring on left hand. She keeps apologizing for the trouble.",
+    "backstory": "Married for two years, working double shifts as a waitress to save money. Has been eating Sunday dinners with her mother-in-law who prepares traditional dishes including carne de cerdo \u2014 sometimes still pink in the middle. She did not want to be rude.",
     "arriving_vitals": {
       "heart_rate": 92,
       "blood_pressure_systolic": 138,
@@ -35,71 +41,82 @@
       "respiratory_rate": 18,
       "o2_saturation": 97
     },
-    "triage_note": "Patient seized at restaurant where she works. Coworkers called 911. Speech was slurred on arrival. No prior seizure history per coworker."
+    "triage_note": "Patient seized at restaurant where she works. Coworkers called 911. Speech was slurred on arrival, improved somewhat in transit. No prior seizure history per coworker. Last meal unknown."
   },
   "ground_truth": {
-    "diagnosis": "Neurocysticercosis (tapeworm larvae in brain)",
+    "diagnosis": "Neurocysticercosis (Taenia solium larvae in brain parenchyma)",
     "differential": [
-      "Primary brain neoplasm",
-      "Brain abscess",
+      "Primary brain neoplasm (high-grade glioma)",
+      "Brain abscess (bacterial or fungal)",
       "Cerebral vasculitis",
-      "Multiple sclerosis"
+      "Multiple sclerosis (tumefactive)",
+      "Cerebral toxoplasmosis"
     ],
-    "mechanism": "Patient consumed undercooked pork. Tapeworm eggs entered bloodstream and lodged in brain tissue. Dying larvae triggered immune response causing edema, seizures, and progressive neurological decline.",
-    "key_insight": "Initial imaging shows a lesion that looks like a tumor. The correct diagnosis depends on discovering dietary exposure to undercooked pork — which is only findable through environmental history or a very specific dietary history question.",
+    "mechanism": "Patient consumed undercooked pork containing Taenia solium cysts over months of Sunday dinners at her mother-in-law home. Oncosphere larvae disseminated hematogenously and lodged in brain parenchyma. Dying larvae triggered focal inflammatory response causing edema, seizures, and progressive neurological decline.",
+    "key_insight": "The CT shows a ring-enhancing lesion \u2014 every trainee anchors to tumor or abscess. The real diagnosis lives in two places: the CBC differential (eosinophilia) and the dietary history (undercooked pork). Both are there from the start. Neither is obvious until you know what you are looking for.",
     "optimal_path": [
       {
         "action": "history_general",
-        "description": "Learn chief complaint details and headache history",
+        "description": "Establish timeline: two weeks of worsening headache culminating in seizure with aphasia",
         "time_minutes": 15
       },
       {
         "action": "physical_exam_focused:neuro",
-        "description": "Confirm focal neurological deficits",
+        "description": "Confirm focal deficits: right-sided weakness, expressive aphasia, Babinski positive",
         "time_minutes": 25
       },
       {
         "action": "order_labs:cbc",
-        "description": "Notice eosinophil elevation suggesting parasitic infection",
-        "time_minutes": 72
+        "description": "CBC with differential \u2014 notice the eosinophilia at 8%, above the 1-3% normal range",
+        "time_minutes": 27
+      },
+      {
+        "action": "order_imaging:ct_head",
+        "description": "Ring-enhancing lesion left parietal. Radiologist says tumor vs abscess.",
+        "time_minutes": 29
       },
       {
         "action": "history_focused:dietary",
-        "description": "Discover undercooked pork exposure",
-        "time_minutes": 82
+        "description": "Undercooked pork \u2014 Sunday dinners at mother-in-laws every week for two years",
+        "time_minutes": 39
       },
       {
         "action": "order_imaging_xray:extremity",
-        "description": "Confirm larvae in muscle tissue",
-        "time_minutes": 104
+        "description": "Calcified larvae in thigh muscle. Radiologist: consistent with cysticercosis.",
+        "time_minutes": 41
       },
       {
         "action": "start_treatment:albendazole",
-        "description": "Begin correct antiparasitic treatment",
-        "time_minutes": 109
+        "description": "Antiparasitic treatment initiated. Deterioration halts.",
+        "time_minutes": 46
       }
     ],
     "critical_time_minutes": 180,
     "narrative_hooks": [
       {
         "type": "misleading_assumption",
-        "description": "CT shows ring-enhancing lesion that looks like brain tumor, anchoring most players to oncology",
-        "structural_role": "Node 3 (Initial CT) sets tumor_suspected flag, creating diagnostic trap"
+        "description": "CT ring-enhancing lesion looks exactly like a brain tumor. Radiologist says so. Players anchor here.",
+        "structural_role": "node_06_ct_lesion sets tumor_suspected, unlocking consult and start_treatment as tempting options"
       },
       {
         "type": "hidden_connection",
-        "description": "Eosinophilia in labs is subtle clue to parasitic infection, easily overlooked",
-        "structural_role": "Node 4 (Labs) provides eosinophilia flag that experienced players can connect to Node 3 lesion"
+        "description": "Eosinophilia is in the labs. Most players see WBC normal and move on. The differential tells another story.",
+        "structural_role": "node_04_cbc_results reveals eosinophilia flag that unlocks history_focused and consult"
       },
       {
         "type": "relational_gate",
-        "description": "Family member (husband) provides alternate path to dietary information if patient not asked directly",
-        "structural_role": "Node 12 (Husband) offers redundant path to undercooked_pork_exposure flag"
+        "description": "Diego arrives at T+30. He knows about the Sunday pork meals. He volunteers this if you earn his trust. He leaves at T+120 if ignored.",
+        "structural_role": "node_13_husband_diego provides redundant path to undercooked_pork_exposure via history_focused:family"
       },
       {
         "type": "red_herring",
-        "description": "Steroids seem to work initially but cause catastrophic rebound",
-        "structural_role": "Node 8 (Wrong Treatment) creates false improvement then accelerates Node 6 crisis timer"
+        "description": "Steroids give 60 minutes of false improvement. Maria smiles. Her headache fades. Then the crisis arrives 60 minutes early.",
+        "structural_role": "node_15_steroid_response accelerates node_09_headache_progression timer by 60 minutes on expire"
+      },
+      {
+        "type": "misleading_assumption",
+        "description": "MRI takes 45 minutes. Serology takes 120 minutes. The thigh X-ray confirms in 20 minutes if you have earned the hypothesis.",
+        "structural_role": "node_12_xray_confirmation only activates after undercooked_pork_exposure or eosinophilia plus lesion_found"
       }
     ]
   },
@@ -118,7 +135,7 @@
     },
     "order_labs": {
       "action_minutes": 2,
-      "result_delay_minutes": 45
+      "result_delay_minutes": 30
     },
     "order_imaging": {
       "action_minutes": 2,
@@ -141,10 +158,51 @@
   },
   "nodes": [
     {
+      "id": "node_00_initial_locks",
+      "type": "behavioral",
+      "content": {
+        "narrative_text": "Case initializing. Advanced actions gated pending clinical discovery."
+      },
+      "activation": {
+        "starts_active": true,
+        "on_activate": [
+          {
+            "type": "lock_action",
+            "target": "history_focused"
+          },
+          {
+            "type": "lock_action",
+            "target": "physical_exam_focused"
+          },
+          {
+            "type": "lock_action",
+            "target": "order_labs"
+          },
+          {
+            "type": "lock_action",
+            "target": "order_imaging"
+          },
+          {
+            "type": "lock_action",
+            "target": "order_imaging_xray"
+          },
+          {
+            "type": "lock_action",
+            "target": "start_treatment"
+          },
+          {
+            "type": "lock_action",
+            "target": "consult"
+          }
+        ]
+      },
+      "reveal": null
+    },
+    {
       "id": "node_01_chief_complaint",
       "type": "history",
       "content": {
-        "narrative_text": "Patient reports she was taking an order when words 'stopped making sense.' She felt confused, then her right arm went stiff, then she doesn't remember anything until the ambulance. She's had headaches for about two weeks — bad ones, worse than usual. She assumed it was stress."
+        "narrative_text": "Maria recounts the past two weeks carefully. Headaches started gradually \u2014 she thought it was stress from double shifts. But they got worse. This morning she was taking a table order when the words stopped making sense. Her arm went stiff. Then nothing until she was in the ambulance. She has never had anything like this. Her speech is slightly halting now, searching for certain words. She is clearly frightened but trying to stay composed."
       },
       "activation": {
         "starts_active": true
@@ -163,8 +221,16 @@
             "target": "seizure_with_aphasia"
           },
           {
-            "type": "activate_node",
-            "target": "node_06_headache_progression"
+            "type": "unlock_action",
+            "target": "physical_exam_focused"
+          },
+          {
+            "type": "unlock_action",
+            "target": "history_focused"
+          },
+          {
+            "type": "unlock_action",
+            "target": "order_labs"
           }
         ]
       },
@@ -174,13 +240,51 @@
       }
     },
     {
-      "id": "node_02_neuro_exam",
+      "id": "node_02_general_exam",
       "type": "medical_finding",
       "content": {
-        "narrative_text": "Right-sided weakness — grip strength 3/5 on right, 5/5 on left. Mild expressive aphasia — she searches for words, occasionally substitutes wrong ones. Pupils equal and reactive. No neck stiffness. Babinski positive on right."
+        "narrative_text": "General exam: Alert, oriented to person and place but slightly slow. Mild expressive hesitancy. No fever. No neck stiffness. Skin clear, no rashes. Abdomen soft, non-tender. Cardiovascular exam unremarkable. You notice she favors her right arm slightly \u2014 she has not mentioned it."
       },
       "activation": {
         "starts_active": true
+      },
+      "reveal": {
+        "action": "physical_exam_general"
+      },
+      "effects": {
+        "on_reveal": [
+          {
+            "type": "set_flag",
+            "target": "general_exam_done"
+          },
+          {
+            "type": "unlock_action",
+            "target": "order_labs"
+          }
+        ]
+      },
+      "outcome_weight": {
+        "category": "medical",
+        "impact": "minor"
+      }
+    },
+    {
+      "id": "node_03_neuro_exam",
+      "type": "medical_finding",
+      "content": {
+        "narrative_text": "Focused neuro exam reveals: Right grip strength 3/5 versus 5/5 on left. Right arm pronator drift positive. Expressive aphasia \u2014 she can understand you but searches for words, occasionally substitutes wrong ones. Pupils equal, round, reactive bilaterally. No papilledema on fundoscopic exam. Babinski sign positive on right. Gait mildly ataxic, listing left. Cranial nerves II-XII grossly intact except for the expressive speech deficit."
+      },
+      "activation": {
+        "paths": [
+          {
+            "conditions": [
+              {
+                "type": "flag_set",
+                "target": "seizure_with_aphasia"
+              }
+            ]
+          }
+        ]
       },
       "reveal": {
         "action": "physical_exam_focused",
@@ -195,6 +299,10 @@
           {
             "type": "set_flag",
             "target": "right_sided_weakness"
+          },
+          {
+            "type": "unlock_action",
+            "target": "order_imaging"
           }
         ]
       },
@@ -204,24 +312,132 @@
       }
     },
     {
-      "id": "node_03_ct_lesion",
+      "id": "node_04_cbc_results",
+      "type": "lab_result",
+      "content": {
+        "narrative_text": "Complete Blood Count with differential: WBC 9.8 (4.5 to 11.0 normal). Hemoglobin 12.9 g/dL. Platelets 224. Differential: Neutrophils 61%, Lymphocytes 27%, Monocytes 4%, Eosinophils 8% (normal 1 to 3%), Basophils 0%. CMP within normal limits. ESR mildly elevated at 28 mm/hr.",
+        "structured_data": {
+          "wbc": 9.8,
+          "wbc_unit": "10^9/L",
+          "wbc_normal_range": "4.5-11.0",
+          "eosinophils_percent": 8,
+          "eosinophils_normal_range": "1-3%",
+          "eosinophils_flag": "HIGH",
+          "esr": 28,
+          "esr_normal_range": "<20",
+          "cmp": "within_normal_limits"
+        }
+      },
+      "activation": {
+        "paths": [
+          {
+            "conditions": [
+              {
+                "type": "flag_set",
+                "target": "headaches_two_weeks"
+              }
+            ]
+          },
+          {
+            "conditions": [
+              {
+                "type": "flag_set",
+                "target": "general_exam_done"
+              }
+            ]
+          }
+        ]
+      },
+      "reveal": {
+        "action": "order_labs",
+        "subcategory": "cbc"
+      },
+      "effects": {
+        "on_reveal": [
+          {
+            "type": "set_flag",
+            "target": "eosinophilia"
+          },
+          {
+            "type": "unlock_action",
+            "target": "history_focused"
+          },
+          {
+            "type": "unlock_action",
+            "target": "consult"
+          }
+        ]
+      },
+      "outcome_weight": {
+        "category": "medical",
+        "impact": "major"
+      },
+      "teaching_note": "WBC is normal \u2014 many players skip the differential. The eosinophilia at 8% is the signal. Parasitic infection, not malignancy."
+    },
+    {
+      "id": "node_05_metabolic_panel",
+      "type": "lab_result",
+      "content": {
+        "narrative_text": "Basic Metabolic Panel: Sodium 138, Potassium 4.1, Chloride 101, Bicarb 24. BUN 14, Creatinine 0.8, Glucose 94. All within normal limits. No electrolyte abnormality to explain altered mental status.",
+        "structured_data": {
+          "sodium": 138,
+          "potassium": 4.1,
+          "bun": 14,
+          "creatinine": 0.8,
+          "glucose": 94,
+          "all_normal": true
+        }
+      },
+      "activation": {
+        "paths": [
+          {
+            "conditions": [
+              {
+                "type": "flag_set",
+                "target": "headaches_two_weeks"
+              }
+            ]
+          }
+        ]
+      },
+      "reveal": {
+        "action": "order_labs",
+        "subcategory": "metabolic_panel"
+      },
+      "outcome_weight": {
+        "category": "medical",
+        "impact": "minor"
+      }
+    },
+    {
+      "id": "node_06_ct_lesion",
       "type": "imaging",
       "content": {
-        "narrative_text": "CT head with contrast shows a 2.3cm ring-enhancing lesion in the left parietal lobe with surrounding edema. Radiologist preliminary read: 'Suspicious for primary brain neoplasm vs. abscess. Recommend MRI for further characterization.'",
+        "narrative_text": "CT Head with contrast: 2.3cm ring-enhancing lesion in the left parietal lobe with surrounding vasogenic edema. Midline shift 2mm to the right. Radiologist preliminary read: Ring-enhancing lesion with surrounding edema, left parietal lobe. Differential includes primary brain neoplasm, high-grade glioma versus metastatic lesion versus brain abscess. Recommend MRI brain with and without contrast for further characterization. Recommend neurosurgery consultation.",
         "structured_data": {
           "modality": "CT head with contrast",
           "finding": "2.3cm ring-enhancing lesion",
           "location": "left parietal lobe",
-          "additional": "surrounding edema"
+          "midline_shift_mm": 2,
+          "edema": "surrounding vasogenic edema",
+          "radiologist_impression": "Primary brain neoplasm vs. abscess. Recommend MRI."
         }
       },
       "activation": {
-        "starts_active": true
+        "paths": [
+          {
+            "conditions": [
+              {
+                "type": "flag_set",
+                "target": "focal_neuro_deficit"
+              }
+            ]
+          }
+        ]
       },
       "reveal": {
         "action": "order_imaging",
-        "subcategory": "ct_head",
-        "delay_minutes": 45
+        "subcategory": "ct_head"
       },
       "effects": {
         "on_reveal": [
@@ -232,43 +448,14 @@
           {
             "type": "set_flag",
             "target": "tumor_suspected"
-          }
-        ]
-      },
-      "outcome_weight": {
-        "category": "medical",
-        "impact": "major"
-      },
-      "teaching_note": "This is the anchoring trap. The CT looks like cancer. Most players will pursue oncology from here."
-    },
-    {
-      "id": "node_04_lab_eosinophilia",
-      "type": "lab_result",
-      "content": {
-        "narrative_text": "CBC: WBC 9.8 (normal), but differential shows eosinophils at 8% (normal: 1-3%). CMP: within normal limits. ESR mildly elevated at 28.",
-        "structured_data": {
-          "wbc": 9.8,
-          "wbc_unit": "10^9/L",
-          "wbc_normal": "4.5-11.0",
-          "eosinophils_percent": 8,
-          "eosinophils_normal": "1-3%",
-          "esr": 28,
-          "esr_normal": "<20 mm/hr"
-        }
-      },
-      "activation": {
-        "starts_active": true
-      },
-      "reveal": {
-        "action": "order_labs",
-        "subcategory": "cbc",
-        "delay_minutes": 45
-      },
-      "effects": {
-        "on_reveal": [
+          },
           {
-            "type": "set_flag",
-            "target": "eosinophilia"
+            "type": "unlock_action",
+            "target": "consult"
+          },
+          {
+            "type": "unlock_action",
+            "target": "start_treatment"
           }
         ]
       },
@@ -276,16 +463,41 @@
         "category": "medical",
         "impact": "major"
       },
-      "teaching_note": "Elevated eosinophils suggest parasitic infection or allergic reaction — NOT cancer. A player who notices this and connects it to the ring-enhancing lesion should reconsider the tumor hypothesis."
+      "teaching_note": "The anchoring trap. This looks exactly like a brain tumor. The radiologist says so. Most players will pursue oncology and miss the turn."
     },
     {
-      "id": "node_05_dietary_history",
+      "id": "node_07_dietary_history",
       "type": "history",
       "content": {
-        "narrative_text": "Maria hesitates, then says her mother-in-law makes traditional dishes — including carne de cerdo that's sometimes still pink in the middle. 'She says that's how it's supposed to be. I didn't want to be rude. I've been eating there every Sunday for two years since we got married.'"
+        "narrative_text": "Maria hesitates. My mother-in-law \u2014 she cooks for us every Sunday. She makes traditional things. Carne de cerdo. Sometimes it is still a little pink in the middle. She says that is how her mother always made it. I did not want to say anything. She tries so hard. I have been going there every Sunday for two years since we got married. A pause. I never thought about it."
       },
       "activation": {
-        "starts_active": true
+        "paths": [
+          {
+            "conditions": [
+              {
+                "type": "flag_set",
+                "target": "eosinophilia"
+              }
+            ]
+          },
+          {
+            "conditions": [
+              {
+                "type": "flag_set",
+                "target": "tumor_suspected"
+              }
+            ]
+          },
+          {
+            "conditions": [
+              {
+                "type": "flag_set",
+                "target": "sunday_meals_known"
+              }
+            ]
+          }
+        ]
       },
       "reveal": {
         "action": "history_focused",
@@ -300,6 +512,14 @@
           {
             "type": "set_flag",
             "target": "dietary_history_taken"
+          },
+          {
+            "type": "set_flag",
+            "target": "neurocysticercosis_suspected"
+          },
+          {
+            "type": "unlock_action",
+            "target": "order_imaging_xray"
           }
         ]
       },
@@ -307,13 +527,48 @@
         "category": "medical",
         "impact": "critical"
       },
-      "teaching_note": "The key unlock. Most players won't think to ask about diet unless they've noticed the eosinophilia or have other reason to suspect parasitic infection."
+      "teaching_note": "The pivot point. Activates only after a clinical reason to ask \u2014 eosinophilia, lesion, or Diego tip. Asking at random reveals nothing."
     },
     {
-      "id": "node_06_headache_progression",
+      "id": "node_08_medications_history",
+      "type": "history",
+      "content": {
+        "narrative_text": "Maria is not on any regular medications. She has never had a seizure before. No anticonvulsants, no steroids, no immunosuppressants. She took ibuprofen for the headaches \u2014 it helped a little at first, then not at all. No drug allergies. She drinks socially, rarely. No recreational drug use."
+      },
+      "activation": {
+        "paths": [
+          {
+            "conditions": [
+              {
+                "type": "flag_set",
+                "target": "seizure_with_aphasia"
+              }
+            ]
+          }
+        ]
+      },
+      "reveal": {
+        "action": "history_focused",
+        "subcategory": "medications"
+      },
+      "effects": {
+        "on_reveal": [
+          {
+            "type": "set_flag",
+            "target": "no_prior_aeds"
+          }
+        ]
+      },
+      "outcome_weight": {
+        "category": "medical",
+        "impact": "minor"
+      }
+    },
+    {
+      "id": "node_09_headache_progression",
       "type": "progression",
       "content": {
-        "narrative_text": "Silent deterioration node - not directly revealed. Effects observed through vitals and potential crisis."
+        "narrative_text": "Silent deterioration \u2014 not directly revealed. Effects manifest through vital sign changes."
       },
       "activation": {
         "paths": [
@@ -367,7 +622,7 @@
         "on_expire": [
           {
             "type": "activate_node",
-            "target": "node_07_seizure_crisis"
+            "target": "node_14_seizure_crisis"
           }
         ]
       },
@@ -382,118 +637,110 @@
       }
     },
     {
-      "id": "node_07_seizure_crisis",
-      "type": "progression",
+      "id": "node_10_mri_result",
+      "type": "imaging",
       "content": {
-        "narrative_text": "Maria suddenly stops mid-sentence. Her eyes roll back. She seizes — full tonic-clonic, violent. The monitor alarms. HR spikes to 140. BP crashes to 80/50. O2 sat drops to 88%."
+        "narrative_text": "MRI Brain with and without contrast: The ring-enhancing lesion shows eccentric internal nodule \u2014 the eccentric scolex sign \u2014 a small dot within the cyst representing the parasite head. T2 signal shows reactive edema. No satellite lesions. Neuroradiology read: Findings most consistent with a solitary viable cysticercus cyst in the colloidal vesicular stage. Parasite head (scolex) visible. Strongly suggestive of neurocysticercosis. Clinical correlation with exposure history recommended.",
+        "structured_data": {
+          "modality": "MRI brain with and without contrast",
+          "finding": "Eccentric scolex sign in ring-enhancing lesion",
+          "location": "left parietal lobe",
+          "neuroradiology_impression": "Solitary cysticercus cyst \u2014 strongly suggestive of neurocysticercosis",
+          "scolex_visible": true
+        }
       },
       "activation": {
         "paths": [
           {
             "conditions": [
               {
-                "type": "node_expired",
-                "target": "node_06_headache_progression"
+                "type": "flag_set",
+                "target": "lesion_found"
               }
             ]
+          }
+        ]
+      },
+      "reveal": {
+        "action": "order_imaging",
+        "subcategory": "mri_brain"
+      },
+      "effects": {
+        "on_reveal": [
+          {
+            "type": "set_flag",
+            "target": "scolex_visible"
           },
+          {
+            "type": "set_flag",
+            "target": "diagnosis_confirmed"
+          },
+          {
+            "type": "set_flag",
+            "target": "cysticercosis_confirmed"
+          },
+          {
+            "type": "set_flag",
+            "target": "neurocysticercosis_suspected"
+          },
+          {
+            "type": "unlock_action",
+            "target": "start_treatment"
+          }
+        ]
+      },
+      "outcome_weight": {
+        "category": "medical",
+        "impact": "critical"
+      },
+      "teaching_note": "Slower path (45-min delay). Highly specific \u2014 scolex sign is pathognomonic. By the time MRI results arrive, node_09 has been ticking 45+ minutes."
+    },
+    {
+      "id": "node_11_serology_result",
+      "type": "lab_result",
+      "content": {
+        "narrative_text": "Taenia solium IgG ELISA: POSITIVE. CDC laboratory confirmation. Report: Positive serology in clinical context of ring-enhancing lesion is highly supportive of neurocysticercosis.",
+        "structured_data": {
+          "test": "Taenia solium IgG ELISA",
+          "result": "POSITIVE",
+          "sensitivity_note": "80-98% for multiple cysts, lower for solitary cyst cases",
+          "clinical_interpretation": "Highly supportive of neurocysticercosis in this clinical context"
+        }
+      },
+      "activation": {
+        "paths": [
           {
             "conditions": [
               {
                 "type": "flag_set",
-                "target": "wrong_treatment_steroids"
+                "target": "eosinophilia"
               }
             ]
           }
         ]
       },
       "reveal": {
-        "auto_reveal": true
-      },
-      "timer": {
-        "duration_minutes": 5,
-        "on_expire": [
-          {
-            "type": "activate_node",
-            "target": "node_11_patient_death"
-          }
-        ]
-      },
-      "vital_signs": {
-        "heart_rate": 140,
-        "blood_pressure_systolic": 80,
-        "blood_pressure_diastolic": 50,
-        "o2_saturation": 88,
-        "respiratory_rate": 6
+        "action": "order_labs",
+        "subcategory": "cysticercosis_serology",
+        "delay_minutes": 120
       },
       "effects": {
         "on_reveal": [
           {
             "type": "set_flag",
-            "target": "crisis_active"
+            "target": "serology_positive"
           },
-          {
-            "type": "lock_action",
-            "target": "history_general"
-          },
-          {
-            "type": "lock_action",
-            "target": "history_focused"
-          }
-        ]
-      },
-      "outcome_weight": {
-        "category": "medical",
-        "impact": "critical"
-      }
-    },
-    {
-      "id": "node_08_wrong_treatment_steroids",
-      "type": "intervention_response",
-      "content": {
-        "narrative_text": "Maria improves dramatically within hours of starting steroids. Her speech clears. Headache subsides. She smiles for the first time since admission. 'See? I'm better. Can I go home?'",
-        "stage_narratives": [
-          {
-            "stage_index": 0,
-            "narrative_text": "Initial improvement on steroids - false progress"
-          },
-          {
-            "stage_index": 1,
-            "narrative_text": "Maria's improvement reverses suddenly. The headache returns, worse. She becomes confused. The edema is worsening — the steroids suppressed the immune system, allowing the parasite to flourish."
-          }
-        ]
-      },
-      "activation": {
-        "starts_active": true
-      },
-      "reveal": {
-        "action": "start_treatment",
-        "subcategory": "steroids"
-      },
-      "timer": {
-        "duration_minutes": 60,
-        "on_expire": [
           {
             "type": "set_flag",
-            "target": "steroid_rebound"
+            "target": "diagnosis_confirmed"
           },
           {
-            "type": "modify_timer",
-            "target": "node_06_headache_progression",
-            "value": -60
-          }
-        ]
-      },
-      "vital_signs": {
-        "heart_rate": 82,
-        "blood_pressure_systolic": 128,
-        "blood_pressure_diastolic": 82
-      },
-      "effects": {
-        "on_reveal": [
-          {
             "type": "set_flag",
-            "target": "wrong_treatment_steroids"
+            "target": "cysticercosis_confirmed"
+          },
+          {
+            "type": "unlock_action",
+            "target": "start_treatment"
           }
         ]
       },
@@ -501,17 +748,21 @@
         "category": "medical",
         "impact": "critical"
       },
-      "teaching_note": "The steroid trap: immediate improvement followed by catastrophic deterioration"
+      "teaching_note": "Serology takes 120 minutes. Waiting for this before treating is dangerous. Treat on clinical suspicion in high-probability cases."
     },
     {
-      "id": "node_09_xray_confirmation",
+      "id": "node_12_xray_confirmation",
       "type": "imaging",
       "content": {
-        "narrative_text": "X-ray of right thigh shows two small, calcified ovoid densities in the muscle tissue consistent with encysted larvae. Radiologist note: 'Findings consistent with cysticercosis.'",
+        "narrative_text": "X-ray right thigh (AP and lateral): Two small, calcified ovoid densities measuring 6mm and 8mm in the vastus lateralis muscle belly. No periosteal reaction. Radiologist note: Calcified ovoid densities in muscle tissue consistent with degenerated cysticerci. Findings support diagnosis of systemic cysticercosis.",
         "structured_data": {
           "modality": "X-ray right thigh",
-          "finding": "Two calcified ovoid densities",
-          "interpretation": "Encysted larvae consistent with cysticercosis"
+          "finding": "Two calcified ovoid densities in vastus lateralis",
+          "sizes_mm": [
+            6,
+            8
+          ],
+          "interpretation": "Degenerated cysticerci in muscle tissue \u2014 systemic cysticercosis"
         }
       },
       "activation": {
@@ -539,13 +790,20 @@
                 "target": "lesion_found"
               }
             ]
+          },
+          {
+            "conditions": [
+              {
+                "type": "flag_set",
+                "target": "neurocysticercosis_suspected"
+              }
+            ]
           }
         ]
       },
       "reveal": {
         "action": "order_imaging_xray",
-        "subcategory": "extremity",
-        "delay_minutes": 20
+        "subcategory": "extremity"
       },
       "effects": {
         "on_reveal": [
@@ -556,116 +814,24 @@
           {
             "type": "set_flag",
             "target": "cysticercosis_confirmed"
+          },
+          {
+            "type": "unlock_action",
+            "target": "start_treatment"
           }
         ]
       },
       "outcome_weight": {
         "category": "medical",
         "impact": "critical"
-      }
+      },
+      "teaching_note": "Fastest confirmatory test (20-min delay). Only available after building sufficient hypothesis. The X-ray option only appears once earned through clinical reasoning."
     },
     {
-      "id": "node_10_correct_treatment",
-      "type": "intervention_response",
-      "content": {
-        "narrative_text": "You start Maria on albendazole. You warn her: the side effects can include abdominal pain, nausea, headache, dizziness, and fever. She nods. 'If it gets rid of whatever's in my head, I'll take it.' Over the next 24 hours, her symptoms slowly improve. The aphasia fades. The headaches ease. She asks to call her husband."
-      },
-      "activation": {
-        "paths": [
-          {
-            "conditions": [
-              {
-                "type": "flag_set",
-                "target": "diagnosis_confirmed"
-              }
-            ]
-          },
-          {
-            "conditions": [
-              {
-                "type": "flag_set",
-                "target": "undercooked_pork_exposure"
-              },
-              {
-                "type": "flag_set",
-                "target": "eosinophilia"
-              }
-            ]
-          }
-        ]
-      },
-      "reveal": {
-        "action": "start_treatment",
-        "subcategory": "albendazole"
-      },
-      "vital_signs": {
-        "heart_rate": 85,
-        "blood_pressure_systolic": 125,
-        "blood_pressure_diastolic": 80,
-        "temperature": 98.6,
-        "respiratory_rate": 16,
-        "o2_saturation": 98
-      },
-      "effects": {
-        "on_reveal": [
-          {
-            "type": "set_flag",
-            "target": "correct_treatment_started"
-          },
-          {
-            "type": "clear_flag",
-            "target": "crisis_active"
-          }
-        ]
-      },
-      "outcome_weight": {
-        "category": "medical",
-        "impact": "critical"
-      }
-    },
-    {
-      "id": "node_11_patient_death",
-      "type": "outcome",
-      "content": {
-        "narrative_text": "Maria seizes again. This time the interventions don't hold. Intracranial pressure rises beyond what the brain can tolerate. Despite everything your team does, she herniates. Time of death is called. She was 28 years old."
-      },
-      "activation": {
-        "paths": [
-          {
-            "conditions": [
-              {
-                "type": "node_expired",
-                "target": "node_07_seizure_crisis"
-              }
-            ]
-          }
-        ]
-      },
-      "reveal": {
-        "auto_reveal": true
-      },
-      "effects": {
-        "on_reveal": [
-          {
-            "type": "set_flag",
-            "target": "patient_death"
-          },
-          {
-            "type": "end_case",
-            "target": "failure"
-          }
-        ]
-      },
-      "outcome_weight": {
-        "category": "medical",
-        "impact": "critical"
-      }
-    },
-    {
-      "id": "node_12_husband_diego",
+      "id": "node_13_husband_diego",
       "type": "relational",
       "content": {
-        "narrative_text": "A man arrives in the waiting room, agitated, speaking rapid Spanish to the front desk. He's Maria's husband, Diego. He's frightened and angry — he wants to know what's happening. If approached with respect and given honest information, he becomes cooperative. He volunteers: 'My mother cooks for us every Sunday. Maria always eats everything — she doesn't want to offend her.'"
+        "narrative_text": "Diego Santos arrives in the waiting room \u2014 Maria's husband. He is agitated, speaking fast, switching between English and Spanish. He demands to know what is happening to his wife. If you approach him with honesty and respect \u2014 explain what you know, acknowledge what you do not \u2014 he steadies. His eyes fill. She never complains. She was having headaches for two weeks and she did not even tell me. He pauses. My mother cooks for us every Sunday. Maria always eats everything \u2014 she does not want to make my mother feel bad. Carne de cerdo, sometimes still pink... is that \u2014 could that be related?"
       },
       "activation": {
         "paths": [
@@ -714,7 +880,231 @@
         "category": "relational",
         "impact": "major"
       },
-      "teaching_note": "Family engagement provides alternate diagnostic pathway and contributes to relational outcome"
+      "teaching_note": "Diego arrives at T+30 and his timer runs 90 minutes \u2014 gone by T+120 if not engaged. Engage early. He holds the dietary clue the patient was too polite to share."
+    },
+    {
+      "id": "node_14_seizure_crisis",
+      "type": "progression",
+      "content": {
+        "narrative_text": "Maria stops mid-sentence. Her eyes deviate right. Full tonic-clonic seizure \u2014 violent, sustained. The monitor alarms cascade: HR spikes to 148. BP crashes to 82/48. SpO2 drops to 86% as she loses airway patency. Your team moves."
+      },
+      "activation": {
+        "paths": [
+          {
+            "conditions": [
+              {
+                "type": "node_expired",
+                "target": "node_09_headache_progression"
+              }
+            ]
+          }
+        ]
+      },
+      "reveal": {
+        "auto_reveal": true
+      },
+      "timer": {
+        "duration_minutes": 5,
+        "on_expire": [
+          {
+            "type": "activate_node",
+            "target": "node_16_patient_death"
+          }
+        ]
+      },
+      "vital_signs": {
+        "heart_rate": 148,
+        "blood_pressure_systolic": 82,
+        "blood_pressure_diastolic": 48,
+        "o2_saturation": 86,
+        "respiratory_rate": 6
+      },
+      "effects": {
+        "on_reveal": [
+          {
+            "type": "set_flag",
+            "target": "crisis_active"
+          },
+          {
+            "type": "lock_action",
+            "target": "history_general"
+          },
+          {
+            "type": "lock_action",
+            "target": "history_focused"
+          },
+          {
+            "type": "lock_action",
+            "target": "physical_exam_general"
+          },
+          {
+            "type": "lock_action",
+            "target": "physical_exam_focused"
+          }
+        ]
+      },
+      "outcome_weight": {
+        "category": "medical",
+        "impact": "critical"
+      }
+    },
+    {
+      "id": "node_15_steroid_response",
+      "type": "intervention_response",
+      "content": {
+        "narrative_text": "Maria responds to the dexamethasone remarkably quickly. Within the hour, the headache eases. Her speech fluency improves. She smiles for the first time since admission. The swelling around the lesion is temporarily reduced. What everyone in the room does not know yet is that the cytokine cascade keeping the parasites in check is now suppressed."
+      },
+      "activation": {
+        "starts_active": true
+      },
+      "reveal": {
+        "action": "start_treatment",
+        "subcategory": "steroids"
+      },
+      "timer": {
+        "duration_minutes": 60,
+        "on_expire": [
+          {
+            "type": "set_flag",
+            "target": "steroid_rebound"
+          },
+          {
+            "type": "modify_timer",
+            "target": "node_09_headache_progression",
+            "value": -60
+          }
+        ]
+      },
+      "vital_signs": {
+        "heart_rate": 82,
+        "blood_pressure_systolic": 126,
+        "blood_pressure_diastolic": 80,
+        "temperature": 98.4,
+        "respiratory_rate": 16,
+        "o2_saturation": 98
+      },
+      "effects": {
+        "on_reveal": [
+          {
+            "type": "set_flag",
+            "target": "wrong_treatment_steroids"
+          }
+        ]
+      },
+      "outcome_weight": {
+        "category": "medical",
+        "impact": "critical"
+      },
+      "teaching_note": "Steroids reduce edema and improve symptoms for 60 minutes. Then: immune suppression accelerates progression by 60 minutes. False improvement, catastrophic undercurrent."
+    },
+    {
+      "id": "node_16_patient_death",
+      "type": "outcome",
+      "content": {
+        "narrative_text": "Maria seizes again \u2014 and this time the interventions do not hold. Intracranial pressure rises beyond what the brain can compensate for. Herniation follows. Despite everything your team does, time of death is called. She was 28 years old. Her husband is in the waiting room."
+      },
+      "activation": {
+        "paths": [
+          {
+            "conditions": [
+              {
+                "type": "node_expired",
+                "target": "node_14_seizure_crisis"
+              }
+            ]
+          }
+        ]
+      },
+      "reveal": {
+        "auto_reveal": true
+      },
+      "effects": {
+        "on_reveal": [
+          {
+            "type": "set_flag",
+            "target": "patient_death"
+          },
+          {
+            "type": "end_case",
+            "target": "failure"
+          }
+        ]
+      },
+      "outcome_weight": {
+        "category": "medical",
+        "impact": "critical"
+      }
+    },
+    {
+      "id": "node_17_correct_treatment",
+      "type": "intervention_response",
+      "content": {
+        "narrative_text": "You start Maria on albendazole 400mg BD with a meal, alongside an anticonvulsant for seizure prophylaxis. You counsel her on what to expect: nausea, headache, possible fever \u2014 the inflammation that comes with the parasite dying. She absorbs it carefully. If it gets rid of whatever is in my head, I will take it. Over the following hours, the progression stops. Vitals stabilize. She asks to call Diego."
+      },
+      "activation": {
+        "paths": [
+          {
+            "conditions": [
+              {
+                "type": "flag_set",
+                "target": "diagnosis_confirmed"
+              }
+            ]
+          },
+          {
+            "conditions": [
+              {
+                "type": "flag_set",
+                "target": "undercooked_pork_exposure"
+              },
+              {
+                "type": "flag_set",
+                "target": "eosinophilia"
+              }
+            ]
+          },
+          {
+            "conditions": [
+              {
+                "type": "flag_set",
+                "target": "undercooked_pork_exposure"
+              },
+              {
+                "type": "flag_set",
+                "target": "lesion_found"
+              }
+            ]
+          }
+        ]
+      },
+      "reveal": {
+        "action": "start_treatment",
+        "subcategory": "albendazole"
+      },
+      "vital_signs": {
+        "heart_rate": 84,
+        "blood_pressure_systolic": 124,
+        "blood_pressure_diastolic": 78,
+        "temperature": 98.4,
+        "respiratory_rate": 16,
+        "o2_saturation": 98
+      },
+      "effects": {
+        "on_reveal": [
+          {
+            "type": "set_flag",
+            "target": "correct_treatment_started"
+          },
+          {
+            "type": "clear_flag",
+            "target": "crisis_active"
+          }
+        ]
+      },
+      "outcome_weight": {
+        "category": "medical",
+        "impact": "critical"
+      }
     }
   ],
   "outcome_evaluation": {
@@ -726,13 +1116,17 @@
           "correct_treatment_started",
           "family_engaged"
         ],
+        "excluded_flags": [
+          "patient_death",
+          "wrong_treatment_steroids"
+        ],
         "time_constraints": [
           {
             "flag": "correct_treatment_started",
             "before_minutes": 120
           }
         ],
-        "narrative": "Maria recovers fully. The parasitic infection is identified and treated early. Diego is informed and involved. The family understands what happened and how to prevent it. Maria returns to work within weeks."
+        "narrative": "Maria recovers fully. The parasitic infection is identified and treated before the crisis can develop. Diego is informed and involved \u2014 he understands what happened, and he will quietly talk to his mother about the pork. Maria returns to work within weeks. She sends a thank-you note."
       },
       {
         "tier": "good",
@@ -740,7 +1134,8 @@
           "correct_treatment_started"
         ],
         "excluded_flags": [
-          "patient_death"
+          "patient_death",
+          "wrong_treatment_steroids"
         ],
         "time_constraints": [
           {
@@ -748,7 +1143,7 @@
             "before_minutes": 180
           }
         ],
-        "narrative": "Maria recovers, but the delay caused additional neurological damage. She has residual word-finding difficulty that may or may not resolve. The parasites are treated."
+        "narrative": "Maria recovers, but the delay caused additional neurological trauma. She has residual word-finding difficulty that improves slowly over months. The parasites are treated. The outcome is positive \u2014 but she carries the consequences of a late diagnosis."
       },
       {
         "tier": "partial",
@@ -758,38 +1153,38 @@
         "excluded_flags": [
           "patient_death"
         ],
-        "narrative": "Maria survives but with significant complications. The delayed diagnosis or wrong treatment caused lasting neurological harm. She may not return to full function."
+        "narrative": "Maria survives. Treatment was eventually correct, but the path there caused lasting harm. She has permanent neurological sequelae. This was preventable."
       },
       {
         "tier": "failure",
         "required_flags": [
           "patient_death"
         ],
-        "narrative": "Maria died. The parasitic infection went undiagnosed too long. The brain edema became unsurvivable."
+        "narrative": "Maria died. The diagnosis was not reached in time, or the wrong treatment accelerated the deterioration past the point of recovery. She was 28 years old."
       }
     ],
     "harmful_actions": [
       {
-        "description": "Administered steroids for presumed vasculitis or tumor edema",
+        "description": "Started high-dose steroids (dexamethasone) for presumed tumor edema or vasculitis",
         "flag": "wrong_treatment_steroids",
-        "penalty_note": "Steroids suppressed immune system, allowing parasites to flourish and accelerating deterioration"
+        "penalty_note": "Steroids suppress immune response, allow the parasite to flourish, and accelerate the progression timeline by 60 minutes. The initial improvement is a trap."
       }
     ],
     "end_conditions": [
       {
         "type": "node_activated",
-        "target": "node_11_patient_death",
-        "description": "Patient dies from untreated or mismanaged condition"
+        "target": "node_16_patient_death",
+        "description": "Patient dies from untreated or mismanaged neurocysticercosis"
       },
       {
         "type": "time_elapsed",
         "value": 360,
-        "description": "Case time limit reached (6 hours simulated time)"
+        "description": "Case time limit reached \u2014 6 hours simulated"
       },
       {
         "type": "flag_set",
         "target": "correct_treatment_started",
-        "description": "Correct treatment initiated, case can resolve positively"
+        "description": "Correct antiparasitic treatment initiated \u2014 case can resolve"
       }
     ]
   }
