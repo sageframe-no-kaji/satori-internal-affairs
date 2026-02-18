@@ -124,5 +124,44 @@ desktop app, not just a web application.
 
 ---
 
+## F-007: Anamnesis Mode 3 — Fully Prompted Creative Generation
+
+**Intent:** A third generation mode where the LLM receives the full
+`CreativeSeed` as a rich prompt — including `dramatic_hook`,
+`character_notes`, `narrative_inspiration`, `key_twists`,
+`emotional_core`, and `forbidden_tropes` — and uses all of it when
+constructing the case. Mode 3 supersedes Mode 2's partial injection
+limitation.
+
+**Current Phase 1 approach (Mode 2):** `CreativeSeed` carries all
+creative fields, but `CaseGenerator.generate_case(seed: CaseSeed)` only
+accepts a `CaseSeed`. Creative-only fields are constructed into a full
+prompt via `build_creative_prompt(seed)`, but the prompt cannot yet be
+passed to the provider. The pipeline logs a note at INFO level. Mode 2
+therefore functions like Mode 1 with richer metadata captured in the
+seed — the creative direction is recorded but not yet injected.
+
+**What Phase 1 must preserve:**
+- `build_creative_prompt()` must continue to produce a well-structured
+  prompt string ready to pass to a provider when the interface supports it
+- `CaseGenerator` interface must be designed so that a future
+  `generate_case_with_prompt(seed, prompt: str)` overload is addable
+  without breaking existing generators
+- `CreativeSeed` and all its creative fields must remain stable — they
+  are the source of truth for Mode 3 when it ships
+
+**What needs to change in llm-client:**
+- `CaseGenerator.generate_case()` (or a new method on it) must accept a
+  `system_prompt` or `user_prompt` override that providers route to their
+  respective API's system/user message slots
+- `MockCaseGenerator` should accept a prompt and optionally vary output
+  for test realism, or at minimum not reject the argument
+
+**When to revisit:** Phase 2, after the first real provider integration is
+validated end-to-end. Mode 3 is the target steady state for high-quality
+case generation.
+
+---
+
 *Add new entries as design decisions are deferred. Number sequentially.
 Remove entries when they're promoted to active development.*
