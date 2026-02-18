@@ -66,6 +66,9 @@ coverage/
 .coverage
 htmlcov/
 
+# Generated cases (Anamnesis artifacts — not source)
+cases/generated/*.json
+
 # Logs
 *.log
 npm-debug.log*

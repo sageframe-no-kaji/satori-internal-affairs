@@ -1,0 +1,12 @@
+# Minimal seed — Mode 1 (automated)
+# The LLM invents all creative content from its training data.
+# Required fields only: diagnosis, difficulty, dramatic_tone.
+
+diagnosis: pneumothorax
+difficulty: beginner
+dramatic_tone: clinical
+
+# Optional: narrow the setting and patient profile
+setting: Emergency Department
+patient_age_range: [18, 35]
+patient_sex: male

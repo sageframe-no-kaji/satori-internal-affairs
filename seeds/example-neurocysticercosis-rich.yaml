@@ -1,0 +1,77 @@
+# Rich creative seed — Mode 2 (narrative direction)
+# All creative fields are prompt context only — they never appear in output case JSON.
+# Based on the canonical example case: cases/example-neurocysticercosis.json
+
+# ── Required fields ──────────────────────────────────────────────────────────
+diagnosis: neurocysticercosis
+difficulty: intermediate
+dramatic_tone: medical_mystery
+
+# ── Medical context ───────────────────────────────────────────────────────────
+patient_age_range: [25, 35]
+patient_sex: female
+setting: Emergency Department
+
+complications:
+  - Language barrier (husband translates and sometimes filters information)
+  - Dietary history withheld due to cultural sensitivity around food practices
+
+learning_objectives:
+  - Recognize seizure with focal features as requiring neuroimaging
+  - Consider parasitic causes in patients with appropriate epidemiological context
+  - Understand why corticosteroids alone worsen neurocysticercosis (without antiparasitics)
+  - "Know the mnemonic: steroids + antiparasitics, not steroids alone"
+
+content_boundaries:
+  - Age-appropriate for 14+ audience
+  - No graphic descriptions of tonic-clonic seizure
+  - Avoid stereotyping based on cultural background
+
+# ── Creative direction (Mode 2) ───────────────────────────────────────────────
+
+dramatic_hook: >
+  A young woman is brought in by her frantic husband after collapsing mid-sentence
+  at a family dinner. She was speaking normally one moment — then her words became
+  garbled and her left arm began jerking before she lost consciousness entirely.
+  The husband is pale, trembling, and speaks only partial English.
+
+red_herrings:
+  - Recent high-stress period (started a demanding new job three weeks ago)
+  - Vague family history of "seizures" in an uncle (second-hand, unverified)
+  - Mild microcytic anemia on CBC — incidental finding, distracts from the neurological focus
+  - Transient headaches dismissed as tension headaches over the past month
+
+character_notes: >
+  Maria is 29, proud, and fiercely independent — she resists being seen as fragile.
+  Her husband Carlos (32) is devoted and overprotective. He translates for her but
+  instinctively softens her symptoms ("she just fainted a little") because he doesn't
+  want her to be seen as sick. Carlos's mother is calling the hospital phone repeatedly
+  from overseas. The dynamic creates information asymmetry the player must navigate:
+  Maria knows more than Carlos conveys.
+
+narrative_inspiration: >
+  Tone reference: House M.D. Season 1, Episode 9 ("DNR") — the family as a
+  complicating layer over the diagnostic puzzle. The actual diagnosis is textbook
+  once all clues surface, but the human dynamics make each reveal feel earned.
+  Also resonant with Season 3's immigration/language barrier episodes.
+
+key_twists:
+  - The "obvious" treatment (steroids for a brain lesion) actively worsens neurocysticercosis
+    without concurrent antiparasitics — the player who jumps to steroids is penalised
+  - Carlos holds the single most important clinical clue (a recent trip and dietary history)
+    but won't volunteer it unless specifically asked — it requires building rapport
+  - The initial CT appearance is consistent with a primary brain tumour, sending the
+    differential down a false path before MRI and serology redirect it
+
+emotional_core: >
+  A young couple far from home, navigating a terrifying medical system in a language
+  that isn't fully theirs. The terror of a potential brain tumour hangs over every
+  interaction. Maria's quiet dignity and Carlos's protective anxiety are both shields
+  against the vulnerability of being sick and foreign. The resolution — when the
+  treatable diagnosis emerges — should land as relief, not just a medical checkbox.
+
+forbidden_tropes:
+  - Immigration status must NEVER be mentioned as a plot point or source of tension
+  - No ethnic or cultural stereotyping in how the characters present or behave
+  - No framing of dietary practices as "wrong" or embarrassing — just a fact of history
+  - Avoid making the language barrier a punchline or source of frustration for the doctor

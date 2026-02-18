@@ -1,0 +1,4 @@
+# Generated cases directory
+# Cases written here by the Anamnesis pipeline are artifacts, not source.
+# This file keeps the directory tracked in git while the generated cases are ignored.
+# See .gitignore: cases/generated/*.json
