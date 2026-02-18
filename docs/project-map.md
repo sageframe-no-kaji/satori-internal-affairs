@@ -2,9 +2,9 @@
 
 **Last updated:** 2026-02-17
 
-This is an interactive medical mystery game where teenagers play as doctors diagnosing patients. The project is split into four packages inside a monorepo. **Satori** is the game engine — it runs cases deterministically (same actions always produce the same outcome). **Anamnesis** will generate those cases using an LLM. **LLM Client** is the provider-agnostic bridge to whatever AI provider we use. **Internal Affairs** is the web frontend players actually see.
+This is an interactive medical mystery game where teenagers play as doctors diagnosing patients. The project is split into four packages inside a monorepo. **Satori** is the game engine — it runs cases deterministically (same actions always produce the same outcome). **Anamnesis** generates those cases using an LLM. **LLM Client** is the provider-agnostic bridge to whatever AI provider we use. **Internal Affairs** is the web frontend players actually see.
 
-Satori and LLM Client are built. Anamnesis and Internal Affairs are scaffolded but empty. The game works like this: a case file describes a patient as a graph of nodes (clues, test results, treatments, crises). The engine loads that graph, and as the player takes actions (ask questions, order labs, prescribe treatment), nodes activate and reveal based on flags and timers. Time passes, vitals change, and the patient gets better or worse depending on what the player does.
+Satori, LLM Client, and Anamnesis are fully built. Internal Affairs is scaffolded but empty. The game works like this: a case file describes a patient as a graph of nodes (clues, test results, treatments, crises). Anamnesis generates those files by prompting an LLM, validating the output at Boundary 1 (the freeze line), and saving only valid cases. The engine loads that graph, and as the player takes actions (ask questions, order labs, prescribe treatment), nodes activate and reveal based on flags and timers. Time passes, vitals change, and the patient gets better or worse depending on what the player does.
 
 ---
 
@@ -18,7 +18,12 @@ satori-internal-affairs/
 ├── .gitignore
 ├── cases/
 │   ├── README.md
-│   └── example-neurocysticercosis.json
+│   ├── example-neurocysticercosis.json
+│   └── generated/                             ← validated cases saved here (gitignored)
+├── seeds/
+│   ├── README.md
+│   ├── example-pneumothorax.yaml
+│   └── example-neurocysticercosis-rich.yaml
 ├── schemas/
 │   ├── README.md
 │   └── case-definition.schema.json
@@ -30,26 +35,30 @@ satori-internal-affairs/
 │   │   ├── example-case-node-validation.md
 │   │   ├── future-features.md
 │   │   ├── ho-03-plan.md
+│   │   ├── ho-04-case-generation-pipeline.md
 │   │   ├── llm-abstraction-layer-explained.md
 │   │   └── phase-1-gameplan.md
 │   └── devlog/
 │       ├── notes.md
 │       ├── phase-1-devlog-002-schema-review.md
 │       ├── phase-1-devlog-003-engine-core.md
-│       └── phase-1-devlog-004-llm-abstraction-layer.md
+│       ├── phase-1-devlog-004-llm-abstraction-layer.md
+│       └── phase-1-devlog-005-case-generation-pipeline.md
 ├── tasks/
 │   ├── README.md
 │   ├── 001-DONE-agent-task-project-scaffolding.md
 │   ├── 002-DONE-agent-task-case-schema.md
 │   ├── 003-DONE-agent-task-satori-engine-core.md
 │   ├── 004-DONE-agent-task-ho-3-llm-abstraction-layer.md
-│   └── 004.2-DONE-agent-task-ho-3-improve-tests.md
+│   ├── 004.2-DONE-agent-task-ho-3-improve-tests.md
+│   └── 005-DONE-agent-task-ho-4-case-generation-pipeline.md
 └── packages/
     ├── satori/
     │   ├── pyproject.toml
     │   ├── README.md
     │   ├── src/satori/
     │   │   ├── __init__.py
+    │   │   ├── py.typed
     │   │   ├── engine.py
     │   │   ├── game_state.py
     │   │   ├── condition_evaluator.py
@@ -77,14 +86,30 @@ satori-internal-affairs/
     │   ├── pyproject.toml
     │   ├── README.md
     │   ├── src/anamnesis/
-    │   │   └── __init__.py
+    │   │   ├── __init__.py
+    │   │   ├── __main__.py
+    │   │   ├── seed.py
+    │   │   ├── validator.py
+    │   │   ├── result.py
+    │   │   ├── prompts.py
+    │   │   └── pipeline.py
     │   └── tests/
+    │       ├── conftest.py
+    │       ├── test_seed.py
+    │       ├── test_validator.py
+    │       ├── test_prompts.py
+    │       ├── test_result.py
+    │       ├── test_pipeline_mock.py
+    │       ├── test_retry_logic.py
+    │       ├── test_cli.py
+    │       ├── test_integration_live.py
     │       └── test_placeholder.py
     ├── llm-client/
     │   ├── pyproject.toml
     │   ├── README.md
     │   ├── src/llm_client/
     │   │   ├── __init__.py
+    │   │   ├── py.typed
     │   │   ├── interfaces.py
     │   │   ├── config.py
     │   │   ├── exceptions.py
@@ -136,10 +161,19 @@ satori-internal-affairs/
 
 ## cases/
 
-Example case files that the engine runs. These are the "frozen artifacts" — fully self-contained JSON descriptions of a medical scenario.
+Example and generated case files that the engine runs. These are the "frozen artifacts" — fully self-contained JSON descriptions of a medical scenario that have passed Boundary 1 validation.
 
 - **`README.md`** — Explains what case files are and how they're used.
 - **`example-neurocysticercosis.json`** — Maria Santos, 28 — seizure + speech difficulty → neurocysticercosis. 12 nodes, timers, multiple diagnostic paths, patient death path. This is the reference case used by all engine tests.
+- **`generated/`** — Output directory for Anamnesis-generated cases. All files here have passed `validate_case_dict()`. The directory is tracked in git but its contents are gitignored.
+
+## seeds/
+
+Human-authored YAML briefs that Anamnesis uses as generation input. YAML is used here because it supports multiline strings and inline comments, which matter for narrative fields.
+
+- **`README.md`** — Explains the seed file format and both generation modes.
+- **`example-pneumothorax.yaml`** — Minimal Mode 1 seed: just medical spec fields.
+- **`example-neurocysticercosis-rich.yaml`** — Full Mode 2 seed: medical spec plus complete narrative direction (dramatic hook, red herrings, character notes, emotional core, forbidden tropes).
 
 ## schemas/
 
@@ -156,8 +190,9 @@ All design thinking, architecture decisions, and session logs live here.
 - **`architecture/`**
   - **`case-data-structure.md`** — Deep dive into the node-graph architecture with a garden metaphor; walks through the Maria Santos case node by node.
   - **`example-case-node-validation.md`** — Pre-schema plain-language description of all 12 Maria Santos nodes; used to validate the architecture before writing JSON.
-  - **`future-features.md`** — Deferred feature register (LLM narration, natural language input, case builder GUI, emotional nodes) with Phase 1 compatibility notes.
+  - **`future-features.md`** — Deferred feature register (LLM narration, natural language input, case builder GUI, emotional nodes, Mode 3 full prompt injection) with Phase 1 compatibility notes.
   - **`ho-03-plan.md`** — Detailed implementation plan for Ho 03 (LLM abstraction layer): file inventory, boundary types, interface contracts, provider implementations.
+  - **`ho-04-case-generation-pipeline.md`** — Learning document explaining how Anamnesis works: seeds, two-phase validation, `GenerationResult` design, retry loop, Boundary 1 enforcement.
   - **`llm-abstraction-layer-explained.md`** — Learning document explaining how llm-client works: interfaces, boundary types, factory pattern, how OpenAI/Anthropic calls work, optional dependencies, mock providers.
   - **`phase-1-gameplan.md`** — Phase 1 plan: vertical slice goal, milestone dependency graph, detailed specs for each milestone (schema → engine → LLM → frontend).
 - **`devlog/`**
@@ -165,6 +200,7 @@ All design thinking, architecture decisions, and session logs live here.
   - **`phase-1-devlog-002-schema-review.md`** — Post-implementation review of the schema task; documents 3 bugs fixed and 3 design observations accepted.
   - **`phase-1-devlog-003-engine-core.md`** — Post-implementation review of the engine task; documents the 20/33 → 33/33 test journey and StateCheckers refactoring.
   - **`phase-1-devlog-004-llm-abstraction-layer.md`** — Post-implementation review of Ho 03; documents architecture decisions, boundary type ownership, optional dependency strategy.
+  - **`phase-1-devlog-005-case-generation-pipeline.md`** — Post-implementation review of Ho 04; documents CreativeSeed design, two-phase validation, retry strategy, GenerationResult pattern, Boundary 1 enforcement, 105-test coverage.
 
 ## tasks/
 
@@ -176,6 +212,7 @@ Agent task specifications. Each one defines a unit of work with goals, acceptanc
 - **`003-DONE-agent-task-satori-engine-core.md`** — Engine: deterministic game loop, all 9 effect types, 198 tests.
 - **`004-DONE-agent-task-ho-3-llm-abstraction-layer.md`** — LLM abstraction: interfaces, boundary types, factory pattern, mock + real providers, 99 tests.
 - **`004.2-DONE-agent-task-ho-3-improve-tests.md`** — Test coverage improvements for Ho 03: factories, schema conformance, error handling, boundary types.
+- **`005-DONE-agent-task-ho-4-case-generation-pipeline.md`** — Case generation pipeline: CreativeSeed, two-phase validation, retry/repair loop, GenerationResult, Boundary 1 enforcement, 105 tests.
 
 ## packages/satori/
 
@@ -183,6 +220,7 @@ The deterministic game engine. This is the only package with real code. It loads
 
 - **`pyproject.toml`** — Package config: Python ≥3.11, depends on pydantic ≥2.0.
 - **`README.md`** — What Satori does and doesn't do (no LLM, no UI, no case generation).
+- **`src/satori/py.typed`** — PEP 561 marker enabling mypy strict type-checking for packages that import satori.
 
 ### src/satori/
 
@@ -217,12 +255,33 @@ The deterministic game engine. This is the only package with real code. It loads
 
 ## packages/anamnesis/
 
-Will be the LLM-powered case generation pipeline. Not built yet — just scaffolding.
+The LLM-powered case generation pipeline. Enforces Boundary 1 (the freeze line): every file saved to `cases/generated/` has been fully validated against `CaseDefinition` before being written to disk.
 
-- **`pyproject.toml`** — Package config: Python ≥3.11, no dependencies yet.
-- **`README.md`** — What Anamnesis will do: orchestrate LLM generation, validate output against schemas, produce frozen case artifacts.
-- **`src/anamnesis/__init__.py`** — Exports version string only — no functional code.
-- **`tests/test_placeholder.py`** — Single `assert True` so pytest has something to run.
+- **`pyproject.toml`** — Package config: Python ≥3.11. Depends on pydantic, pyyaml, satori, llm-client. Optional extras: `openai`, `anthropic`, `all`. Dev extras: pytest, ruff, mypy.
+- **`README.md`** — What Anamnesis does: two seed modes, validation at Boundary 1, retry/repair strategy, CLI usage.
+
+### src/anamnesis/
+
+- **`__init__.py`** — Public API: exports `CreativeSeed`, `GenerationResult`, `CaseGenerationPipeline`, `validate_case_dict`, `load_seed_file`, `build_creative_prompt`, `build_repair_prompt`.
+- **`__main__.py`** — CLI entry point. `python -m anamnesis --diagnosis X --difficulty Y --dramatic-tone Z [--seed path.yaml] [--output-dir path] [--max-retries N] [--provider mock|openai|anthropic] [--verbose]`.
+- **`seed.py`** — `CreativeSeed` frozen dataclass with all `CaseSeed` fields plus Mode 2 narrative fields (`dramatic_hook`, `red_herrings`, `character_notes`, etc.). `load_seed_file(path)` parses YAML seed files. `to_case_seed()` extracts the llm-client-compatible subset.
+- **`validator.py`** — `validate_case_dict(raw_dict)` runs two-phase validation: (1) Pydantic schema check via `CaseDefinition.model_validate()`, (2) structural consistency checks (unique node IDs, action refs exist in action_costs, timer stages sorted ascending). Returns `(CaseDefinition | None, list[str])`.
+- **`result.py`** — `GenerationResult` frozen dataclass. Fields: `success`, `case`, `raw_dict`, `case_path`, `attempts`, `errors`, `seed`. `__post_init__` enforces invariants. Helper constructors `_make_success()`, `_make_failure()`, and `_with_path()` for immutable updates.
+- **`prompts.py`** — `build_creative_prompt(seed)` assembles a three-section prompt from all `CreativeSeed` fields (medical requirements, creative direction, structural constraints). `build_repair_prompt(raw_dict, errors)` builds an error-feedback prompt for repair retries.
+- **`pipeline.py`** — `CaseGenerationPipeline(config, output_dir)` orchestrates seed → LLM → validate → retry/repair → save. `generate(seed, max_retries=3)` returns `GenerationResult`. `save(result)` writes validated case JSON to `cases/generated/case-{diagnosis}-{uuid8}.json`. `generate_and_save()` convenience wrapper.
+
+### tests/
+
+- **`conftest.py`** — Shared fixtures: minimal valid case dict, example `CreativeSeed`, output temp dir.
+- **`test_seed.py`** — 26 tests: `CreativeSeed` construction, `to_case_seed()`, `has_creative_fields()`, `load_seed_file()` happy path and all error branches.
+- **`test_validator.py`** — 14 tests: schema errors, structural errors (duplicate IDs, bad action refs, unsorted timers), multi-error collection, non-dict input, success returns empty errors.
+- **`test_prompts.py`** — 18 tests: all `CreativeSeed` fields appear in `build_creative_prompt()`, repair prompt includes prior output and errors, unserializable dict fallback.
+- **`test_result.py`** — 9 tests: `GenerationResult` invariants, `_make_success/failure/_with_path` helpers, `__post_init__` enforcement.
+- **`test_pipeline_mock.py`** — 18 tests: `Provider.MOCK` full pipeline, `generate()`, `save()`, `generate_and_save()`, failure path (no file written), default output dir constant.
+- **`test_retry_logic.py`** — 16 tests: success on first attempt, success on retry, repair attempt triggered, all attempts fail, `max_retries=0` edge case; uses `_CountingGenerator` injection.
+- **`test_cli.py`** — 11 tests: required args, optional flags (`--verbose`, `--max-retries`, `--seed`, `--provider`), failed generation → exit 1, `--max-retries` forwarded correctly.
+- **`test_integration_live.py`** — 7 tests marked `live_llm` (skipped without API keys): real OpenAI/Anthropic end-to-end generation and validation.
+- **`test_placeholder.py`** — Original scaffold placeholder (kept).
 
 ## packages/llm-client/
 
@@ -230,6 +289,7 @@ The provider-agnostic LLM abstraction layer. Enforces Boundary 4 (the provider l
 
 - **`pyproject.toml`** — Package config: Python ≥3.11, zero required dependencies. Optional deps: `openai`, `anthropic`, `all`. Dev deps include pytest, ruff, mypy, jsonschema.
 - **`README.md`** — What LLM Client does: unified interface for OpenAI/Anthropic/mock, handles auth, request formatting, response parsing.
+- **`src/llm_client/py.typed`** — PEP 561 marker enabling mypy strict type-checking for packages that import llm-client.
 
 ### src/llm_client/
 
