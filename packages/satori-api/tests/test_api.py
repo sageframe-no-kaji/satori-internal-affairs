@@ -34,6 +34,13 @@ def test_health():
     data = resp.json()
     assert data["status"] == "ok"
     assert "active_sessions" in data
+    assert data["active_sessions"] == 0
+
+
+def test_health_reflects_session_count():
+    client.post("/api/sessions", json={"case_path": EXAMPLE_CASE})
+    data = client.get("/health").json()
+    assert data["active_sessions"] == 1
 
 
 # ---------------------------------------------------------------------------
@@ -214,7 +221,7 @@ def test_execute_action_advances_time():
     action = _get_first_action(sid)
     resp = client.post(f"/api/sessions/{sid}/actions", json={"action": action})
     new_time = resp.json()["state"]["current_time_minutes"]
-    assert new_time >= initial_time  # time never goes backwards
+    assert new_time > initial_time  # every action must consume game time
 
 
 def test_execute_action_state_is_self_contained():
@@ -225,6 +232,34 @@ def test_execute_action_state_is_self_contained():
     data = resp.json()
     # state.available_actions and top-level available_actions must match
     assert sorted(data["state"]["available_actions"]) == sorted(data["available_actions"])
+
+
+def test_execute_action_response_has_outcome_fields():
+    """ActionResponse must always carry outcome_tier and end_reason (null when game ongoing)."""
+    sid = _start_session()
+    action = _get_first_action(sid)
+    resp = client.post(f"/api/sessions/{sid}/actions", json={"action": action})
+    data = resp.json()
+    assert "outcome_tier" in data
+    assert "end_reason" in data
+    # Game not ended yet — both should be null
+    assert data["case_ended"] is False
+    assert data["outcome_tier"] is None
+    assert data["end_reason"] is None
+
+
+def test_execute_action_state_contains_gamestate_subfields():
+    """GameStateResponse must include pending_reveals and timers dict fields."""
+    sid = _start_session()
+    action = _get_first_action(sid)
+    resp = client.post(f"/api/sessions/{sid}/actions", json={"action": action})
+    state = resp.json()["state"]
+    assert "pending_reveals" in state
+    assert "timers" in state
+    assert "timer_stages" in state
+    assert isinstance(state["pending_reveals"], dict)
+    assert isinstance(state["timers"], dict)
+    assert isinstance(state["timer_stages"], dict)
 
 
 def test_execute_action_invalid():
@@ -243,14 +278,15 @@ def test_event_response_shape():
     action = _get_first_action(sid)
     resp = client.post(f"/api/sessions/{sid}/actions", json={"action": action})
     events = resp.json()["events"]
-    if events:
-        event = events[0]
-        assert "type" in event
-        assert "timestamp_minutes" in event
-        assert "data" in event
-        assert isinstance(event["type"], str)
-        assert isinstance(event["timestamp_minutes"], int)
-        assert isinstance(event["data"], dict)
+    # Every action must emit at least one event (at minimum a time_advanced)
+    assert len(events) > 0, "Expected at least one event from a valid action"
+    event = events[0]
+    assert "type" in event
+    assert "timestamp_minutes" in event
+    assert "data" in event
+    assert isinstance(event["type"], str)
+    assert isinstance(event["timestamp_minutes"], int)
+    assert isinstance(event["data"], dict)
 
 
 # ---------------------------------------------------------------------------
@@ -322,4 +358,6 @@ def test_get_revealed_node_after_action():
     data = content_resp.json()
     assert data["node_id"] == revealed_node_id
     assert isinstance(data["narrative_text"], str)
+    assert len(data["narrative_text"]) > 0, "narrative_text must not be empty"
+    assert "structured_data" in data
     assert len(data["narrative_text"]) > 0

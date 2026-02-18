@@ -11,6 +11,7 @@ from satori_api.serialisation import (
     events_to_responses,
     patient_to_response,
     state_to_response,
+    vitals_to_response,
 )
 
 EXAMPLE_CASE = "cases/example-neurocysticercosis.json"
@@ -50,10 +51,17 @@ def test_state_to_response_vitals_shape(engine: SatoriEngine):
     state = engine.get_state()
     resp = state_to_response(state)
     vitals = resp.current_vitals
-    # All fields are int|float|None
-    for field in ("heart_rate", "blood_pressure_systolic", "o2_saturation"):
+    # All six vital fields must be int/float/None
+    for field in (
+        "heart_rate",
+        "blood_pressure_systolic",
+        "blood_pressure_diastolic",
+        "temperature",
+        "respiratory_rate",
+        "o2_saturation",
+    ):
         val = getattr(vitals, field)
-        assert val is None or isinstance(val, (int, float))
+        assert val is None or isinstance(val, (int, float)), f"{field}={val!r} is not numeric"
 
 
 def test_patient_to_response_shape(engine: SatoriEngine):
@@ -61,7 +69,18 @@ def test_patient_to_response_shape(engine: SatoriEngine):
     assert resp.name == "Maria Santos"
     assert isinstance(resp.age, int)
     assert isinstance(resp.sex, str)
+    assert isinstance(resp.setting, str)
+    assert len(resp.setting) > 0
+    assert isinstance(resp.chief_complaint, str)
+    assert len(resp.chief_complaint) > 0
+    assert isinstance(resp.appearance, str)
+    assert len(resp.appearance) > 0
     assert isinstance(resp.arriving_vitals.heart_rate, int)
+    # triage_note and backstory are optional but must be str if present
+    if resp.triage_note is not None:
+        assert isinstance(resp.triage_note, str)
+    if resp.backstory is not None:
+        assert isinstance(resp.backstory, str)
 
 
 def test_build_session_response_complete(engine: SatoriEngine):
@@ -71,6 +90,7 @@ def test_build_session_response_complete(engine: SatoriEngine):
     assert resp.patient is not None
     assert isinstance(resp.patient_condition, str)
     assert isinstance(resp.available_actions, list)
+    assert len(resp.available_actions) > 0
 
 
 def test_events_to_responses_empty():
@@ -89,3 +109,39 @@ def test_events_to_responses_after_action(engine: SatoriEngine):
         assert isinstance(r.type, str)
         assert isinstance(r.timestamp_minutes, int)
         assert isinstance(r.data, dict)
+
+
+def test_vitals_to_response_all_fields(engine: SatoriEngine):
+    """vitals_to_response maps all six fields without dropping any."""
+    state = engine.get_state()
+    resp = vitals_to_response(state.current_vitals)
+    for field in (
+        "heart_rate",
+        "blood_pressure_systolic",
+        "blood_pressure_diastolic",
+        "temperature",
+        "respiratory_rate",
+        "o2_saturation",
+    ):
+        assert hasattr(resp, field), f"VitalSignsResponse missing field: {field}"
+
+
+def test_state_to_response_subfields_present(engine: SatoriEngine):
+    """GameStateResponse must include pending_reveals, timers, timer_stages."""
+    resp = state_to_response(engine.get_state())
+    assert isinstance(resp.pending_reveals, dict)
+    assert isinstance(resp.timers, dict)
+    assert isinstance(resp.timer_stages, dict)
+
+
+def test_events_to_responses_event_types_are_strings(engine: SatoriEngine):
+    """Event type values must be plain strings (enum .value), not enum members."""
+    case = validate_case(EXAMPLE_CASE)
+    fresh_engine = SatoriEngine(case)
+    available = list(fresh_engine.get_available_actions())
+    events = fresh_engine.execute_action(available[0])
+    responses = events_to_responses(events)
+    for r in responses:
+        assert isinstance(r.type, str)
+        # Must not contain enum class noise like "<EventType.x: 'x'>"
+        assert "<" not in r.type and ">" not in r.type
