@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
+
 import pytest
-from satori import SatoriEngine
+from satori import Event, SatoriEngine
 from satori.models import validate_case
 
 from satori_api.narrator_bridge import _describe_event, narrate_events
@@ -17,7 +19,7 @@ def engine() -> SatoriEngine:
     return SatoriEngine(case)
 
 
-def _fresh() -> tuple[SatoriEngine, list[object]]:
+def _fresh() -> tuple[SatoriEngine, Sequence[Event]]:
     """Return a fresh engine and the events from its first available action."""
     case = validate_case(EXAMPLE_CASE)
     eng = SatoriEngine(case)
@@ -33,13 +35,13 @@ def test_narrate_events_empty_list(engine: SatoriEngine):
 
 def test_narrate_events_returns_one_per_event(engine: SatoriEngine):
     eng, events = _fresh()
-    narrations = narrate_events(events, eng)  # type: ignore[arg-type]
+    narrations = narrate_events(list(events), eng)
     assert len(narrations) == len(events)
 
 
 def test_narrate_events_are_non_empty_strings(engine: SatoriEngine):
     eng, events = _fresh()
-    narrations = narrate_events(events, eng)  # type: ignore[arg-type]
+    narrations = narrate_events(list(events), eng)
     for n in narrations:
         assert isinstance(n, str)
         assert len(n) > 0
@@ -48,7 +50,7 @@ def test_narrate_events_are_non_empty_strings(engine: SatoriEngine):
 def test_mock_narrator_output_contains_mock_prefix(engine: SatoriEngine):
     """MockNarrator always tags output with [Mock Narration]."""
     eng, events = _fresh()
-    narrations = narrate_events(events, eng)  # type: ignore[arg-type]
+    narrations = narrate_events(list(events), eng)
     for n in narrations:
         assert "[Mock Narration]" in n
 
@@ -56,7 +58,7 @@ def test_mock_narrator_output_contains_mock_prefix(engine: SatoriEngine):
 def test_mock_narrator_output_contains_patient_name(engine: SatoriEngine):
     """MockNarrator embeds the patient name in every narration."""
     eng, events = _fresh()
-    narrations = narrate_events(events, eng)  # type: ignore[arg-type]
+    narrations = narrate_events(list(events), eng)
     for n in narrations:
         assert "Maria Santos" in n
 
