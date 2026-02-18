@@ -34,9 +34,9 @@ satori-internal-affairs/
 │   │   ├── case-data-structure.md
 │   │   ├── example-case-node-validation.md
 │   │   ├── future-features.md
-│   │   ├── ho-03-plan.md
-│   │   ├── ho-04-case-generation-pipeline.md
-│   │   ├── llm-abstraction-layer-explained.md
+│   │   ├── P1-H03-plan.md
+│   │   ├── P1-H03-llm-abstraction-layer.md
+│   │   ├── P1-H04-case-generation-pipeline.md
 │   │   └── phase-1-gameplan.md
 │   └── devlog/
 │       ├── P1-H00-devlog-notes.md
@@ -191,9 +191,9 @@ All design thinking, architecture decisions, and session logs live here.
   - **`case-data-structure.md`** — Deep dive into the node-graph architecture with a garden metaphor; walks through the Maria Santos case node by node.
   - **`example-case-node-validation.md`** — Pre-schema plain-language description of all 12 Maria Santos nodes; used to validate the architecture before writing JSON.
   - **`future-features.md`** — Deferred feature register (LLM narration, natural language input, case builder GUI, emotional nodes, Mode 3 full prompt injection) with Phase 1 compatibility notes.
-  - **`ho-03-plan.md`** — Detailed implementation plan for Ho 03 (LLM abstraction layer): file inventory, boundary types, interface contracts, provider implementations.
-  - **`ho-04-case-generation-pipeline.md`** — Learning document explaining how Anamnesis works: seeds, two-phase validation, `GenerationResult` design, retry loop, Boundary 1 enforcement.
-  - **`llm-abstraction-layer-explained.md`** — Learning document explaining how llm-client works: interfaces, boundary types, factory pattern, how OpenAI/Anthropic calls work, optional dependencies, mock providers.
+  - **`P1-H03-plan.md`** — Pre-build design spec for Ho 03 (LLM abstraction layer): file inventory, boundary types, interface contracts, provider implementations.
+  - **`P1-H03-llm-abstraction-layer.md`** — Learning document explaining how llm-client works: interfaces, boundary types, factory pattern, how OpenAI/Anthropic calls work, optional dependencies, mock providers.
+  - **`P1-H04-case-generation-pipeline.md`** — Learning document explaining how Anamnesis works: seeds, two-phase validation, `GenerationResult` design, retry loop, Boundary 1 enforcement.
   - **`phase-1-gameplan.md`** — Phase 1 plan: vertical slice goal, milestone dependency graph, detailed specs for each milestone (schema → engine → LLM → frontend).
 - **`devlog/`**
   - **`P1-H00-devlog-notes.md`** — Raw design thinking — how to model conditional reveal, branching trajectories, and outcome evaluation in a frozen data structure.
