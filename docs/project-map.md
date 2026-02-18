@@ -1,6 +1,6 @@
 # Project Map
 
-**Last updated:** 2026-02-17
+**Last updated:** 2026-02-18
 
 This is an interactive medical mystery game where teenagers play as doctors diagnosing patients. The project is split into four packages inside a monorepo. **Satori** is the game engine — it runs cases deterministically (same actions always produce the same outcome). **Anamnesis** generates those cases using an LLM. **LLM Client** is the provider-agnostic bridge to whatever AI provider we use. **Internal Affairs** is the web frontend players actually see.
 
@@ -34,6 +34,7 @@ satori-internal-affairs/
 │   │   ├── case-data-structure.md
 │   │   ├── example-case-node-validation.md
 │   │   ├── future-features.md
+│   │   ├── satori-engine-api.md                       ← public API reference (Ho 05)
 │   │   ├── P1-H03-plan.md
 │   │   ├── P1-H03-llm-abstraction-layer.md
 │   │   ├── P1-H04-case-generation-pipeline.md
@@ -51,7 +52,8 @@ satori-internal-affairs/
 │   ├── P1-H02-DONE-agent-task-satori-engine-core.md
 │   ├── P1-H03-DONE-agent-task-llm-abstraction-layer.md
 │   ├── P1-H03.2-DONE-agent-task-improve-tests.md
-│   └── P1-H04-DONE-agent-task-case-generation-pipeline.md
+│   ├── P1-H04-DONE-agent-task-case-generation-pipeline.md
+│   └── P1-H05-DONE-agent-task-minimal-playable-frontend.md
 └── packages/
     ├── satori/
     │   ├── pyproject.toml
@@ -128,6 +130,21 @@ satori-internal-affairs/
     │       ├── test_placeholder.py
     │       ├── test_providers.py
     │       └── test_schema_conformance.py
+    ├── satori-api/
+    │   ├── pyproject.toml
+    │   ├── README.md
+    │   ├── src/satori_api/
+    │   │   ├── __init__.py
+    │   │   ├── main.py
+    │   │   ├── models.py
+    │   │   ├── session_manager.py
+    │   │   ├── narrator_bridge.py
+    │   │   └── serialisation.py
+    │   └── tests/
+    │       ├── __init__.py
+    │       ├── test_api.py
+    │       ├── test_serialisation.py
+    │       └── test_narrator_bridge.py
     └── internal-affairs/
         ├── package.json
         ├── README.md
@@ -143,8 +160,18 @@ satori-internal-affairs/
             ├── app.d.ts
             ├── lib/
             │   ├── index.ts
-            │   └── assets/
-            │       └── favicon.svg
+            │   ├── api.ts
+            │   ├── types.ts
+            │   ├── assets/
+            │   │   └── favicon.svg
+            │   ├── stores/
+            │   │   └── gameStore.svelte.ts
+            │   └── components/
+            │       ├── PatientHeader.svelte
+            │       ├── VitalsPanel.svelte
+            │       ├── ActionMenu.svelte
+            │       ├── EventLog.svelte
+            │       └── OutcomeScreen.svelte
             └── routes/
                 ├── +layout.svelte
                 └── +page.svelte
@@ -155,7 +182,7 @@ satori-internal-affairs/
 ## Root
 
 - **`LICENSE`** — MIT license (Andrew T Marcus, 2025).
-- **`Makefile`** — Build commands: setup, lint, typecheck, test, dev-frontend, clean.
+- **`Makefile`** — Build commands: setup, lint, typecheck, test, dev-frontend, dev-api, dev-all, clean.
 - **`README.md`** — Project overview, architecture summary, package descriptions.
 - **`.gitignore`** — Ignores Python/Node artifacts, IDE files, env files.
 
@@ -190,7 +217,8 @@ All design thinking, architecture decisions, and session logs live here.
 - **`architecture/`**
   - **`case-data-structure.md`** — Deep dive into the node-graph architecture with a garden metaphor; walks through the Maria Santos case node by node.
   - **`example-case-node-validation.md`** — Pre-schema plain-language description of all 12 Maria Santos nodes; used to validate the architecture before writing JSON.
-  - **`future-features.md`** — Deferred feature register (LLM narration, natural language input, case builder GUI, emotional nodes, Mode 3 full prompt injection) with Phase 1 compatibility notes.
+  - **`future-features.md`** — Deferred feature register (LLM narration, natural language input, case builder GUI, emotional nodes, Mode 3 full prompt injection, F-008 session management evolution) with Phase 1 compatibility notes.
+  - **`satori-engine-api.md`** — Authoritative public API reference for the satori and llm-client packages: SatoriEngine methods, GameState fields, all 12 event types, PatientCondition, parse_action, Narrator/NarrationEvent/NarrationContext, ModelConfig factories. Written in Ho 05 to support satori-api development.
   - **`P1-H03-plan.md`** — Pre-build design spec for Ho 03 (LLM abstraction layer): file inventory, boundary types, interface contracts, provider implementations.
   - **`P1-H03-llm-abstraction-layer.md`** — Learning document explaining how llm-client works: interfaces, boundary types, factory pattern, how OpenAI/Anthropic calls work, optional dependencies, mock providers.
   - **`P1-H04-case-generation-pipeline.md`** — Learning document explaining how Anamnesis works: seeds, two-phase validation, `GenerationResult` design, retry loop, Boundary 1 enforcement.
@@ -213,6 +241,7 @@ Agent task specifications. Each one defines a unit of work with goals, acceptanc
 - **`P1-H03-DONE-agent-task-llm-abstraction-layer.md`** — LLM abstraction: interfaces, boundary types, factory pattern, mock + real providers, 99 tests.
 - **`P1-H03.2-DONE-agent-task-improve-tests.md`** — Test coverage improvements for Ho 03: factories, schema conformance, error handling, boundary types.
 - **`P1-H04-DONE-agent-task-case-generation-pipeline.md`** — Case generation pipeline: CreativeSeed, two-phase validation, retry/repair loop, GenerationResult, Boundary 1 enforcement, 105 tests.
+- **`P1-H05-DONE-agent-task-minimal-playable-frontend.md`** — Minimal playable frontend: FastAPI bridge (satori-api), SvelteKit UI (Internal Affairs), in-memory sessions with stateless-shaped responses, server-side MockNarrator.
 
 ## packages/satori/
 
@@ -315,21 +344,53 @@ The provider-agnostic LLM abstraction layer. Enforces Boundary 4 (the provider l
 - **`test_providers.py`** — Provider-specific tests: OpenAI/Anthropic constructor validation, schema loading, prompt building.
 - **`test_schema_conformance.py`** — 11 tests: validates mock case output against the actual JSON schema, checks required keys and structure.
 
+## packages/satori-api/
+
+FastAPI bridge server. Exposes the Satori engine and MockNarrator over HTTP. Enforces Boundary 2 (the truth line) and Boundary 3 (the narration line): the frontend never imports Python code directly; all interaction is through HTTP responses.
+
+- **`pyproject.toml`** — Package config: Python ≥3.11, depends on fastapi, uvicorn, pydantic, satori, llm-client. Dev extras: pytest, httpx.
+- **`README.md`** — What satori-api does: FastAPI bridge, in-memory sessions, stateless-shaped responses, server-side narration.
+
+### src/satori_api/
+
+- **`__init__.py`** — Package version.
+- **`main.py`** — FastAPI application. Four endpoints: POST /api/sessions, GET /api/sessions/{id}, POST /api/sessions/{id}/actions, GET /api/sessions/{id}/nodes/{node_id}. CORS configured for SvelteKit dev server.
+- **`models.py`** — Pydantic request/response models: CreateSessionRequest, ExecuteActionRequest, SessionResponse, ActionResponse, GameStateResponse, EventResponse, PatientContextResponse, VitalSignsResponse, NodeContentResponse, ErrorResponse.
+- **`session_manager.py`** — In-memory session store. create_session(case_path), get_engine(session_id), delete_session(session_id), session_count(). Isolated so Phase 2 session evolution only touches this module (F-008).
+- **`narrator_bridge.py`** — Server-side narration via MockNarrator. narrate_events(events, engine) → list[str]. Builds NarrationEvent + NarrationContext from each event and engine state, calls narrator.narrate() for each.
+- **`serialisation.py`** — Domain object → API response converters. Handles frozenset → sorted list, VitalSigns → VitalSignsResponse, GameState → GameStateResponse, PatientContext → PatientContextResponse, Event → EventResponse, build_session_response().
+
+### tests/
+
+- **`test_api.py`** — End-to-end API tests using FastAPI TestClient: session lifecycle, response shapes, determinism, error handling, node content endpoint. ~30 tests.
+- **`test_serialisation.py`** — Unit tests for serialisation helpers: frozensets become sorted lists, case_id is str, VitalSigns fields all nullable-safe. ~10 tests.
+- **`test_narrator_bridge.py`** — Tests narrate_events(): empty list, parallel length, non-empty strings, MockNarrator output includes patient name. ~4 tests.
+
+---
+
 ## packages/internal-affairs/
 
-The SvelteKit web frontend. Default scaffold — no project-specific UI yet.
+The SvelteKit web frontend. Ho 05 implementation: fully playable single-page game UI.
 
 - **`package.json`** — npm config: SvelteKit 2.x, Svelte 5.x, Vite 7.x, TypeScript 5.x.
-- **`README.md`** — What the frontend will do: present the investigative UI, communicate with Satori, render the experience.
+- **`README.md`** — What the frontend does: investigative UI, communicates with satori-api, renders the experience.
 - **`svelte.config.js`** — SvelteKit config using adapter-auto.
 - **`tsconfig.json`** — TypeScript strict mode config.
-- **`vite.config.ts`** — Vite build config with SvelteKit plugin.
+- **`vite.config.ts`** — Vite build config with SvelteKit plugin + dev proxy: /api → http://localhost:8000.
 - **`.gitignore`** — SvelteKit-specific ignores.
 - **`.npmrc`** — Enforces engine-strict for version matching.
 - **`static/robots.txt`** — Allows all crawlers.
 - **`src/app.html`** — HTML shell with SvelteKit placeholders.
-- **`src/app.d.ts`** — TypeScript ambient declarations (all stubs).
-- **`src/lib/index.ts`** — Empty barrel file for $lib imports.
+- **`src/app.d.ts`** — TypeScript ambient declarations.
+- **`src/lib/index.ts`** — Barrel file for $lib imports.
+- **`src/lib/types.ts`** — All TypeScript types mirroring satori-api response models: VitalSigns, PatientContext, GameState, GameEvent, SessionResponse, ActionResponse, PatientCondition, EventLogEntry, AppView.
+- **`src/lib/api.ts`** — Typed HTTP client: createSession, getSession, executeAction, getNodeContent, deleteSession. All calls use Vite proxy /api path. Exports ApiError.
 - **`src/lib/assets/favicon.svg`** — Default Svelte logo.
+- **`src/lib/stores/gameStore.svelte.ts`** — Svelte 5 runes game store. Holds full reactive state (sessionId, gameState, patient, patientCondition, availableActions, eventLog, view, isLoading, error). Methods: startSession, performAction, reset.
+- **`src/lib/components/PatientHeader.svelte`** — Patient identity: name, age/sex/setting, chief complaint, appearance, triage note.
+- **`src/lib/components/VitalsPanel.svelte`** — Vital signs grid with colour-coded status (normal/warn/critical) and patient condition badge.
+- **`src/lib/components/ActionMenu.svelte`** — Available actions as grouped buttons. Action keys humanised (order_labs:cbc → "Order Labs: CBC").
+- **`src/lib/components/EventLog.svelte`** — Turn-by-turn feed (newest first). Each entry shows narrated text for significant events plus expandable raw event data.
+- **`src/lib/components/OutcomeScreen.svelte`** — Case resolution screen: outcome tier badge (OPTIMAL/GOOD/PARTIAL/FAILURE with colour), end reason, Play Again button.
 - **`src/routes/+layout.svelte`** — Root layout: sets favicon, renders child routes.
-- **`src/routes/+page.svelte`** — Home page: default "Welcome to SvelteKit" placeholder.
+- **`src/routes/+page.svelte`** — Single page application: start view → play view → outcome view, driven entirely by game store.

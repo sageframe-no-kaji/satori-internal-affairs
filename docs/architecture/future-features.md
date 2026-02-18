@@ -163,5 +163,50 @@ case generation.
 
 ---
 
+---
+
+## F-008: Session Management Evolution
+
+**Intent:** Move from in-memory session state to a fully stateless or
+serialisable session model. Phase 1 uses an in-memory
+`dict[str, SatoriEngine]` keyed by session ID on the FastAPI server.
+A future iteration can swap this for serialised state (capture
+`GameState` + action history → replay on demand) or a persistent
+session store, without changing any frontend code.
+
+**Current Phase 1 approach:** In-memory dict
+(`session_manager.py`). Sessions are lost on process restart. No
+persistence, no horizontal scaling. Acceptable for a single-case
+local dev environment.
+
+**Design principle applied (DIP):** The API is designed as if sessions
+were stateless. Every response from `POST /api/sessions` and
+`POST /api/sessions/{id}/actions` carries the **full renderable
+state** — `GameState`, available actions, patient context, patient
+condition, narrated events. The frontend never reads hidden server
+state; it renders exactly what the last response contained. This
+means swapping the session store is a server-side change only.
+
+**What Phase 1 must preserve:**
+- Every API response must be self-contained: no partial state, no
+  references to "what the server told you before"
+- Session ID must remain opaque to the frontend — it is a lookup key,
+  not a semantic value
+- `session_manager.py` must be isolated behind a thin interface so
+  the storage implementation can be replaced without touching
+  `main.py` or `models.py`
+
+**What needs to change when revisiting:**
+- Replace `dict[str, SatoriEngine]` with serialised `GameState` +
+  action-log replay, or an external store (Redis, DB, etc.)
+- Add session expiry / garbage collection
+- Consider whether `CaseDefinition` needs to be stored or re-loaded
+  from a case registry
+
+**When to revisit:** Phase 2, when multi-user support or deployment
+beyond localhost is needed.
+
+---
+
 *Add new entries as design decisions are deferred. Number sequentially.
 Remove entries when they're promoted to active development.*
