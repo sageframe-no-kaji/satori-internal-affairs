@@ -46,12 +46,12 @@ satori-internal-affairs/
 │       └── phase-1-devlog-005-case-generation-pipeline.md
 ├── tasks/
 │   ├── README.md
-│   ├── 001-DONE-agent-task-project-scaffolding.md
-│   ├── 002-DONE-agent-task-case-schema.md
-│   ├── 003-DONE-agent-task-satori-engine-core.md
-│   ├── 004-DONE-agent-task-ho-3-llm-abstraction-layer.md
-│   ├── 004.2-DONE-agent-task-ho-3-improve-tests.md
-│   └── 005-DONE-agent-task-ho-4-case-generation-pipeline.md
+│   ├── P1-H00-DONE-agent-task-project-scaffolding.md
+│   ├── P1-H01-DONE-agent-task-case-schema.md
+│   ├── P1-H02-DONE-agent-task-satori-engine-core.md
+│   ├── P1-H03-DONE-agent-task-llm-abstraction-layer.md
+│   ├── P1-H03.2-DONE-agent-task-improve-tests.md
+│   └── P1-H04-DONE-agent-task-case-generation-pipeline.md
 └── packages/
     ├── satori/
     │   ├── pyproject.toml
@@ -207,12 +207,12 @@ All design thinking, architecture decisions, and session logs live here.
 Agent task specifications. Each one defines a unit of work with goals, acceptance criteria, and commit message templates.
 
 - **`README.md`** — Explains the task format.
-- **`001-DONE-agent-task-project-scaffolding.md`** — Scaffolding: directory structure, configs, README, Makefile.
-- **`002-DONE-agent-task-case-schema.md`** — Schema: JSON Schema + Pydantic models + example case + tests.
-- **`003-DONE-agent-task-satori-engine-core.md`** — Engine: deterministic game loop, all 9 effect types, 198 tests.
-- **`004-DONE-agent-task-ho-3-llm-abstraction-layer.md`** — LLM abstraction: interfaces, boundary types, factory pattern, mock + real providers, 99 tests.
-- **`004.2-DONE-agent-task-ho-3-improve-tests.md`** — Test coverage improvements for Ho 03: factories, schema conformance, error handling, boundary types.
-- **`005-DONE-agent-task-ho-4-case-generation-pipeline.md`** — Case generation pipeline: CreativeSeed, two-phase validation, retry/repair loop, GenerationResult, Boundary 1 enforcement, 105 tests.
+- **`P1-H00-DONE-agent-task-project-scaffolding.md`** — Scaffolding: directory structure, configs, README, Makefile.
+- **`P1-H01-DONE-agent-task-case-schema.md`** — Schema: JSON Schema + Pydantic models + example case + tests.
+- **`P1-H02-DONE-agent-task-satori-engine-core.md`** — Engine: deterministic game loop, all 9 effect types, 198 tests.
+- **`P1-H03-DONE-agent-task-llm-abstraction-layer.md`** — LLM abstraction: interfaces, boundary types, factory pattern, mock + real providers, 99 tests.
+- **`P1-H03.2-DONE-agent-task-improve-tests.md`** — Test coverage improvements for Ho 03: factories, schema conformance, error handling, boundary types.
+- **`P1-H04-DONE-agent-task-case-generation-pipeline.md`** — Case generation pipeline: CreativeSeed, two-phase validation, retry/repair loop, GenerationResult, Boundary 1 enforcement, 105 tests.
 
 ## packages/satori/
 
