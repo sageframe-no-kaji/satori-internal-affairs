@@ -118,6 +118,81 @@ class TestCLIMode2:
         assert exit_code == 1
 
 
+class TestCLIFailurePaths:
+    """CLI returns exit code 1 when generation fails."""
+
+    def test_failed_generation_returns_exit_code_1(self, tmp_path: Path) -> None:
+        """When the pipeline reports failure, main() exits with 1."""
+        import unittest.mock as mock
+
+        from anamnesis.result import GenerationResult
+        from anamnesis.seed import CreativeSeed
+
+        failed_result = GenerationResult(
+            success=False,
+            case=None,
+            raw_dict={"partial": "data"},
+            case_path=None,
+            attempts=4,
+            errors=["[schema] nodes: Field required"],
+            seed=CreativeSeed(
+                diagnosis="pneumothorax",
+                difficulty="beginner",
+                dramatic_tone="clinical",
+            ),
+        )
+        with mock.patch(
+            "anamnesis.pipeline.CaseGenerationPipeline.generate",
+            return_value=failed_result,
+        ):
+            exit_code = main([
+                "generate",
+                "--diagnosis", "pneumothorax",
+                "--provider", "mock",
+                "--no-save",
+            ])
+        assert exit_code == 1
+
+    def test_verbose_flag_accepted(self) -> None:
+        """--verbose flag is accepted without error."""
+        exit_code = main([
+            "generate",
+            "--diagnosis", "pneumothorax",
+            "--provider", "mock",
+            "--no-save",
+            "--verbose",
+        ])
+        assert exit_code == 0
+
+    def test_max_retries_forwarded(self) -> None:
+        """--max-retries value is forwarded to pipeline.generate()."""
+        import unittest.mock as mock
+
+        captured: dict[str, object] = {}
+
+        original_generate = __import__(
+            "anamnesis.pipeline", fromlist=["CaseGenerationPipeline"]
+        ).CaseGenerationPipeline.generate
+
+        def _spy_generate(self: object, seed: object, max_retries: int = 3) -> object:
+            captured["max_retries"] = max_retries
+            return original_generate(self, seed, max_retries=max_retries)
+
+        with mock.patch(
+            "anamnesis.pipeline.CaseGenerationPipeline.generate",
+            _spy_generate,
+        ):
+            main([
+                "generate",
+                "--diagnosis", "pneumothorax",
+                "--provider", "mock",
+                "--no-save",
+                "--max-retries", "7",
+            ])
+
+        assert captured["max_retries"] == 7
+
+
 class TestCLISavedOutput:
     """Verify the saved case JSON is valid."""
 

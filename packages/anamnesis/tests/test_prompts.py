@@ -117,3 +117,54 @@ class TestBuildRepairPrompt:
         """Prompt works even with an empty errors list (degenerate case)."""
         prompt = build_repair_prompt({"id": "x"}, [])
         assert isinstance(prompt, str)
+
+    def test_unserializable_dict_falls_back_to_str(self) -> None:
+        """build_repair_prompt falls back to str() when json.dumps raises."""
+
+        class _Unserializable:
+            pass
+
+        bad: dict[str, object] = {"key": _Unserializable()}
+        # Should not raise — falls back to str(bad)
+        prompt = build_repair_prompt(bad, ["some error"])  # type: ignore[arg-type]
+        assert isinstance(prompt, str)
+        assert len(prompt) > 0
+
+
+class TestBuildCreativePromptOptionalFields:
+    """Optional medical and creative fields appear correctly in the prompt."""
+
+    def test_content_boundaries_in_prompt(self) -> None:
+        """content_boundaries items are reflected in the generated prompt."""
+        seed = CreativeSeed(
+            diagnosis="test",
+            difficulty="intermediate",
+            dramatic_tone="clinical",
+            content_boundaries=["no graphic violence", "no explicit language"],
+        )
+        prompt = build_creative_prompt(seed)
+        assert "no graphic violence" in prompt
+
+    def test_setting_and_sex_in_prompt(self) -> None:
+        """setting and patient_sex appear in the medical requirements section."""
+        seed = CreativeSeed(
+            diagnosis="test",
+            difficulty="intermediate",
+            dramatic_tone="clinical",
+            setting="ICU",
+            patient_sex="male",
+        )
+        prompt = build_creative_prompt(seed)
+        assert "ICU" in prompt
+        assert "male" in prompt
+
+    def test_key_twists_in_prompt(self) -> None:
+        """key_twists appear in the creative direction section."""
+        seed = CreativeSeed(
+            diagnosis="test",
+            difficulty="intermediate",
+            dramatic_tone="clinical",
+            key_twists=["First test was false negative"],
+        )
+        prompt = build_creative_prompt(seed)
+        assert "First test was false negative" in prompt

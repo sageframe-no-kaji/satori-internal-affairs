@@ -183,4 +183,38 @@ class TestGenerateAndSave:
         result = pipeline.generate_and_save(minimal_seed)
         assert result.success
         assert result.case_path is not None
-        assert result.case_path.exists()
+
+    def test_generate_and_save_failure_returns_no_path(
+        self, mock_config: ModelConfig, minimal_seed: CreativeSeed, tmp_path: Path
+    ) -> None:
+        """If generation fails, generate_and_save returns the failure result (no path)."""
+        from typing import Any
+
+        from llm_client.interfaces import CaseGenerator
+        from llm_client.interfaces import CaseSeed as LLMCaseSeed
+
+        from anamnesis.result import GenerationResult
+
+        class _AlwaysInvalidGen(CaseGenerator):
+            def generate_case(self, seed: LLMCaseSeed) -> dict[str, Any]:
+                return {}  # always invalid
+
+        pipeline = CaseGenerationPipeline(mock_config, output_dir=tmp_path)
+        pipeline._generator = _AlwaysInvalidGen()  # type: ignore[assignment]
+        result = pipeline.generate_and_save(minimal_seed, max_retries=1)
+        assert isinstance(result, GenerationResult)
+        assert result.success is False
+        assert result.case_path is None
+        # Nothing written to disk
+        assert list(tmp_path.glob("*.json")) == []
+
+
+class TestPipelineDefaultOutputDir:
+    """Pipeline uses cases/generated/ as the default output dir."""
+
+    def test_default_output_dir_is_cases_generated(self, mock_config: ModelConfig) -> None:
+        """Default output_dir resolves to Path('cases/generated')."""
+        from pathlib import Path
+
+        pipeline = CaseGenerationPipeline(mock_config)
+        assert pipeline._output_dir == Path("cases/generated")

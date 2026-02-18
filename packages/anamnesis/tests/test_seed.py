@@ -188,3 +188,30 @@ class TestLoadSeedFile:
         )
         with pytest.raises(ValueError, match="patient_age_range"):
             load_seed_file(p)
+
+    def test_non_dict_yaml_raises(self, tmp_path: Path) -> None:
+        """ValueError when YAML root is not a mapping (e.g. a bare list)."""
+        p = tmp_path / "list.yaml"
+        p.write_text("- item1\n- item2\n")
+        with pytest.raises(ValueError, match="mapping"):
+            load_seed_file(p)
+
+    def test_non_list_field_for_list_key_raises(self, tmp_path: Path) -> None:
+        """ValueError when a list field (e.g. complications) is a scalar string."""
+        p = tmp_path / "bad_list.yaml"
+        p.write_text(
+            "diagnosis: x\ndifficulty: beginner\ndramatic_tone: clinical\n"
+            "complications: should-be-a-list\n"
+        )
+        with pytest.raises(ValueError, match="complications"):
+            load_seed_file(p)
+
+    def test_whitespace_only_string_opt_field_is_none(self, tmp_path: Path) -> None:
+        """_opt_str returns None when the value is blank/whitespace."""
+        p = tmp_path / "blank.yaml"
+        p.write_text(
+            "diagnosis: x\ndifficulty: beginner\ndramatic_tone: clinical\n"
+            "setting: '   '\n"
+        )
+        seed = load_seed_file(p)
+        assert seed.setting is None

@@ -83,6 +83,25 @@ class TestGenerationResultConstruction:
 class TestHelpers:
     """_make_success, _make_failure, _with_path helpers."""
 
+    def test_make_success(self, minimal_seed: CreativeSeed) -> None:
+        """_make_success produces a valid, unsaved, successful result."""
+        import json
+
+        repo_root = Path(__file__).parent.parent.parent.parent
+        with (repo_root / "cases" / "example-neurocysticercosis.json").open() as f:
+            data = json.load(f)
+        from satori.models import CaseDefinition
+
+        case = CaseDefinition.model_validate(data)
+        result = _make_success(case, data, 2, minimal_seed)
+        assert result.success is True
+        assert result.case is case
+        assert result.raw_dict is data
+        assert result.case_path is None
+        assert result.attempts == 2
+        assert result.errors == []
+        assert result.seed is minimal_seed
+
     def test_make_failure(self, minimal_seed: CreativeSeed) -> None:
         result = _make_failure({"bad": "dict"}, 3, ["err1", "err2"], minimal_seed)
         assert result.success is False
@@ -91,6 +110,12 @@ class TestHelpers:
         assert result.errors == ["err1", "err2"]
         assert result.case_path is None
         assert result.seed is minimal_seed
+
+    def test_make_failure_with_none_raw_dict(self, minimal_seed: CreativeSeed) -> None:
+        """_make_failure accepts None for raw_dict."""
+        result = _make_failure(None, 1, ["err"], minimal_seed)
+        assert result.raw_dict is None
+        assert result.success is False
 
     def test_with_path(self, minimal_seed: CreativeSeed) -> None:
         """_with_path creates a copy with case_path set."""

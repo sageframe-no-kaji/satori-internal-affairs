@@ -131,3 +131,49 @@ class TestStructuralChecks:
         case_def, errors = validate_case_dict({})
         assert case_def is None
         assert all(e.startswith("[schema]") or e.startswith("[structural]") for e in errors)
+
+
+class TestValidatorEdgeCases:
+    """Edge cases and additional branches in validate_case_dict."""
+
+    def test_non_dict_input_handled(self) -> None:
+        """Passing a non-dict (e.g. a list) fails gracefully rather than crashing."""
+        case_def, errors = validate_case_dict([])  # type: ignore[arg-type]
+        assert case_def is None
+        assert len(errors) > 0
+
+    def test_returns_empty_errors_on_success(self) -> None:
+        """On success the errors list is exactly empty, not just falsy."""
+        import copy
+        import json
+        from pathlib import Path
+
+        repo_root = Path(__file__).parent.parent.parent.parent
+        with (repo_root / "cases" / "example-neurocysticercosis.json").open() as f:
+            raw = json.load(f)
+        case_def, errors = validate_case_dict(copy.deepcopy(raw))
+        assert errors == []
+        assert case_def is not None
+
+    def test_multiple_structural_errors_all_reported(self) -> None:
+        """All structural errors are collected, not just the first."""
+        import copy
+        import json
+        from pathlib import Path
+
+        repo_root = Path(__file__).parent.parent.parent.parent
+        with (repo_root / "cases" / "example-neurocysticercosis.json").open() as f:
+            data = json.load(f)
+        data = copy.deepcopy(data)
+        # Introduce two distinct structural errors at once:
+        # 1. Duplicate node ID
+        if len(data["nodes"]) >= 2:
+            data["nodes"][1]["id"] = data["nodes"][0]["id"]
+        # 2. Invalid action ref
+        for node in data["nodes"]:
+            if node.get("reveal") and node["reveal"].get("action"):
+                node["reveal"]["action"] = "nonexistent_zzz"
+                break
+        case_def, errors = validate_case_dict(data)
+        assert case_def is None
+        assert len(errors) >= 2
