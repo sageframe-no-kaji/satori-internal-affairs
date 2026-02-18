@@ -39,11 +39,11 @@ satori-internal-affairs/
 │   │   ├── llm-abstraction-layer-explained.md
 │   │   └── phase-1-gameplan.md
 │   └── devlog/
-│       ├── notes.md
-│       ├── phase-1-devlog-002-schema-review.md
-│       ├── phase-1-devlog-003-engine-core.md
-│       ├── phase-1-devlog-004-llm-abstraction-layer.md
-│       └── phase-1-devlog-005-case-generation-pipeline.md
+│       ├── P1-H00-devlog-notes.md
+│       ├── P1-H01-devlog-schema-review.md
+│       ├── P1-H02-devlog-engine-core.md
+│       ├── P1-H03-devlog-llm-abstraction-layer.md
+│       └── P1-H04-devlog-case-generation-pipeline.md
 ├── tasks/
 │   ├── README.md
 │   ├── P1-H00-DONE-agent-task-project-scaffolding.md
@@ -196,11 +196,11 @@ All design thinking, architecture decisions, and session logs live here.
   - **`llm-abstraction-layer-explained.md`** — Learning document explaining how llm-client works: interfaces, boundary types, factory pattern, how OpenAI/Anthropic calls work, optional dependencies, mock providers.
   - **`phase-1-gameplan.md`** — Phase 1 plan: vertical slice goal, milestone dependency graph, detailed specs for each milestone (schema → engine → LLM → frontend).
 - **`devlog/`**
-  - **`notes.md`** — Raw design thinking — how to model conditional reveal, branching trajectories, and outcome evaluation in a frozen data structure.
-  - **`phase-1-devlog-002-schema-review.md`** — Post-implementation review of the schema task; documents 3 bugs fixed and 3 design observations accepted.
-  - **`phase-1-devlog-003-engine-core.md`** — Post-implementation review of the engine task; documents the 20/33 → 33/33 test journey and StateCheckers refactoring.
-  - **`phase-1-devlog-004-llm-abstraction-layer.md`** — Post-implementation review of Ho 03; documents architecture decisions, boundary type ownership, optional dependency strategy.
-  - **`phase-1-devlog-005-case-generation-pipeline.md`** — Post-implementation review of Ho 04; documents CreativeSeed design, two-phase validation, retry strategy, GenerationResult pattern, Boundary 1 enforcement, 105-test coverage.
+  - **`P1-H00-devlog-notes.md`** — Raw design thinking — how to model conditional reveal, branching trajectories, and outcome evaluation in a frozen data structure.
+  - **`P1-H01-devlog-schema-review.md`** — Post-implementation review of the schema task; documents 3 bugs fixed and 3 design observations accepted.
+  - **`P1-H02-devlog-engine-core.md`** — Post-implementation review of the engine task; documents the 20/33 → 33/33 test journey and StateCheckers refactoring.
+  - **`P1-H03-devlog-llm-abstraction-layer.md`** — Post-implementation review of Ho 03; documents architecture decisions, boundary type ownership, optional dependency strategy.
+  - **`P1-H04-devlog-case-generation-pipeline.md`** — Post-implementation review of Ho 04; documents CreativeSeed design, two-phase validation, retry strategy, GenerationResult pattern, Boundary 1 enforcement, 105-test coverage.
 
 ## tasks/
 
