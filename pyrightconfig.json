@@ -1,0 +1,15 @@
+{
+  "venvPath": ".",
+  "venv": ".venv",
+  "pythonVersion": "3.11",
+  "include": [
+    "packages/satori/src",
+    "packages/anamnesis/src",
+    "packages/llm-client/src",
+    "packages/satori-api/src",
+    "packages/satori-api/tests",
+    "packages/anamnesis/tests",
+    "packages/satori/tests"
+  ],
+  "typeCheckingMode": "basic"
+}

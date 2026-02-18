@@ -8,6 +8,14 @@ frontend receives pre-narrated strings, never raw events for text generation.
 
 from __future__ import annotations
 
+from llm_client import (
+    ModelConfig,
+    NarrationContext,
+    NarrationEvent,
+    Narrator,
+    Provider,
+    create_narrator,
+)
 from satori import (
     ActionLockedEvent,
     ActionUnlockedEvent,
@@ -23,14 +31,6 @@ from satori import (
     TimeAdvancedEvent,
     TimerStageEvent,
     VitalsChangedEvent,
-)
-from llm_client import (
-    ModelConfig,
-    NarrationContext,
-    NarrationEvent,
-    Narrator,
-    Provider,
-    create_narrator,
 )
 
 # ---------------------------------------------------------------------------

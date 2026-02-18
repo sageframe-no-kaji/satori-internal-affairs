@@ -15,7 +15,6 @@ from satori_api.models import (
     SessionResponse,
     VitalSignsResponse,
 )
-from satori_api.narrator_bridge import narrate_events
 
 
 def vitals_to_response(vitals: object) -> VitalSignsResponse:  # type: ignore[type-arg]

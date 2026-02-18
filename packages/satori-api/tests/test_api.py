@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+from collections.abc import Generator
+
 import pytest
 from fastapi.testclient import TestClient
 
-from satori_api.main import app
 from satori_api import session_manager
+from satori_api.main import app
 
 EXAMPLE_CASE = "cases/example-neurocysticercosis.json"
 
@@ -14,10 +16,10 @@ client = TestClient(app)
 
 
 @pytest.fixture(autouse=True)
-def clear_sessions() -> None:
+def clear_sessions() -> Generator[None, None, None]:
     """Reset session store between tests to prevent leakage."""
     session_manager._sessions.clear()
-    yield  # type: ignore[misc]
+    yield
     session_manager._sessions.clear()
 
 

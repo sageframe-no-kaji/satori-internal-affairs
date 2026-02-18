@@ -11,7 +11,6 @@ from satori_api.serialisation import (
     events_to_responses,
     patient_to_response,
     state_to_response,
-    vitals_to_response,
 )
 
 EXAMPLE_CASE = "cases/example-neurocysticercosis.json"

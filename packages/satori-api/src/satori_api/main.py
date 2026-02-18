@@ -14,10 +14,10 @@ from __future__ import annotations
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import ValidationError
-
 from satori import InvalidActionError
 from satori.patient_condition import compute_patient_condition
 
+from satori_api import session_manager
 from satori_api.models import (
     ActionResponse,
     CreateSessionRequest,
@@ -32,7 +32,6 @@ from satori_api.serialisation import (
     events_to_responses,
     state_to_response,
 )
-from satori_api import session_manager
 
 # ---------------------------------------------------------------------------
 # App setup
