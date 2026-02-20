@@ -1,6 +1,6 @@
-# Phase 1 Devlog 004 — Vertical Slice (Ho 06)
+# Phase 1 Devlog — Vertical Slice (Ho 06)
 
-**Date:** 2025-07
+**Date:** 2026-02
 **Task:** `tasks/P1-H06-agent-task-vertical-slice.md`
 **Status:** Complete
 
@@ -33,8 +33,8 @@ three root-level actions.
 
 ## Algorithm: `get_playable_actions()`
 
-The method scans all nodes in the case and for each applies a six-step
-filter. If a node passes all six, it contributes an action string to the
+The method scans all nodes in the case and for each applies an eight-step
+filter. If a node passes all eight, it contributes an action string to the
 result set.
 
 ```
