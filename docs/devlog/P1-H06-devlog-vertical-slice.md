@@ -1,7 +1,7 @@
 # Phase 1 Devlog 004 — Vertical Slice (Ho 06)
 
-**Date:** 2025-07  
-**Task:** `tasks/P1-H06-agent-task-vertical-slice.md`  
+**Date:** 2025-07
+**Task:** `tasks/P1-H06-agent-task-vertical-slice.md`
 **Status:** Complete
 
 ---
