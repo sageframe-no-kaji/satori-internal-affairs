@@ -101,4 +101,5 @@ def build_session_response(session_id: str, engine: SatoriEngine) -> SessionResp
         patient=patient_to_response(engine.case),
         patient_condition=condition.value,
         available_actions=sorted(state.available_actions),
+        playable_actions=sorted(engine.get_playable_actions()),
     )

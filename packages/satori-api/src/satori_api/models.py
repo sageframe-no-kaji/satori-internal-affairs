@@ -119,6 +119,7 @@ class SessionResponse(BaseModel):
     patient: PatientContextResponse
     patient_condition: str
     available_actions: list[str]
+    playable_actions: list[str]
 
 
 class ActionResponse(BaseModel):
@@ -134,6 +135,7 @@ class ActionResponse(BaseModel):
     state: GameStateResponse
     patient_condition: str
     available_actions: list[str]
+    playable_actions: list[str]
     case_ended: bool
     outcome_tier: str | None = None
     end_reason: str | None = None

@@ -376,6 +376,82 @@ class SatoriEngine:
         """
         return self.state.available_actions
 
+    def get_playable_actions(self) -> frozenset[str]:
+        """Return all currently executable action strings, including subcategories.
+
+        Scans active unrevealed nodes for their reveal rules. For each node
+        whose base action is unlocked and whose conditions are satisfied,
+        includes the fully-qualified action string (base:subcategory or base).
+
+        Also includes any unlocked base actions that have no subcategory nodes
+        (orphan actions like emergency_intervention) as bare base keys.
+
+        This is what the UI should display — not the raw available_actions
+        frozenset, which only contains base keys.
+
+        Returns:
+            Frozenset of playable action strings
+        """
+        state = self.state
+        result: set[str] = set()
+        covered_base_actions: set[str] = set()
+
+        for node in self.case.nodes:
+            # Skip already revealed
+            if node.id in state.revealed_nodes:
+                continue
+            # Skip already ordered/pending
+            if node.id in state.pending_reveals:
+                continue
+            # Skip inactive (not yet unlocked by flag gates)
+            if node.id not in state.active_nodes:
+                continue
+            # Skip controller nodes with no reveal rule
+            if node.reveal is None:
+                continue
+            # Skip auto-reveal nodes (not player-triggered)
+            if node.reveal.auto_reveal:
+                continue
+            # Skip nodes with no action trigger
+            if node.reveal.action is None:
+                continue
+            # Skip if base action is locked
+            if node.reveal.action not in state.available_actions:
+                continue
+            # Check additional conditions on the reveal rule
+            if node.reveal.conditions:
+                if not all(
+                    self.condition_eval._evaluate_condition(c, state)
+                    for c in node.reveal.conditions
+                ):
+                    continue
+
+            # Track which base actions have subcategory nodes
+            covered_base_actions.add(node.reveal.action)
+
+            # Build fully-qualified action string
+            if node.reveal.subcategory:
+                result.add(f"{node.reveal.action}:{node.reveal.subcategory}")
+            else:
+                result.add(node.reveal.action)
+
+        # Orphan base actions: unlocked and not the reveal action of ANY node in the
+        # case (neither revealed nor unrevealed).  These are bare engine-level actions
+        # with no content nodes attached (e.g. emergency_intervention) and should
+        # always be surfaced when unlocked.
+        # Actions whose nodes are all revealed are intentionally excluded — they have
+        # no remaining content to unlock and should not re-appear in the UI.
+        all_node_action_bases: set[str] = {
+            node.reveal.action
+            for node in self.case.nodes
+            if node.reveal is not None and node.reveal.action is not None
+        }
+        for base_action in state.available_actions:
+            if base_action not in all_node_action_bases:
+                result.add(base_action)
+
+        return frozenset(result)
+
     def get_node_content(self, node_id: str) -> NodeContent | None:
         """Get content for a revealed node.
 

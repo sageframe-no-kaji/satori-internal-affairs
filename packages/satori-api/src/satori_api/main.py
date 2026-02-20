@@ -178,6 +178,7 @@ def execute_action(session_id: str, body: ExecuteActionRequest) -> ActionRespons
         state=state_to_response(state),
         patient_condition=condition.value,
         available_actions=sorted(state.available_actions),
+        playable_actions=sorted(engine.get_playable_actions()),
         case_ended=state.case_ended,
         outcome_tier=state.outcome_tier,
         end_reason=state.end_reason,

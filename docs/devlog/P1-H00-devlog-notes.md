@@ -1,5 +1,5 @@
 
-1. **The design question:** How do you model conditional information reveal in a static data structure? This is the heart of the schema. 
+1. **The design question:** How do you model conditional information reveal in a static data structure? This is the heart of the schema.
 node system? track with flags? there ARE a finite number of permutations, and not all flags matter for all other nodes. certain actions can unlock  other nodes. There can be a set number of nodes to fill so the raw structure is always the same (and limited) but the relationships (the nets between the nodes) are flexible,.  So thee idea is to have a lot of MINI state machines running in parrallel, starting and stopping independently. each tiesd to the "cpu clock"
 2. **The design question:** How do you represent branching patient trajectories in a frozen artifact? You can't encode every possible path — you need a model that's expressive enough for interesting cases but constrained enough for Satori to evaluate deterministically.
 there are states. it does not neefd to be determanistic overall, just deterministic by node and time states. that is, each node has an expiration (and causes a trigger or a final outcome) after a certain amount of time after initialized. in each "action node" can have its own clock that can be paused if certain conditions arent met. In some senses, it is like a CPU with processes that are independent but can be effected bu other processes. Time should progress turn based (each move is a "cpu cycle", some taking more than others.)
@@ -9,3 +9,16 @@ I think this is an amalgam of the nodfes that remain "active" at the end state, 
 
 All of this leads to C.
 I have thought this through but have never modelled something like this. It makes sense to me as a data structure. Does it have an analog in the real programming world?
+
+
+
+
+Gameplay:
+- need to make a diagnosis before treatment, even if wrong
+- treatments have consequences
+- emergencies need to be TRIGGERED and CLEAR
+- There should be COUNDDOWN CLOCKS for situations
+  - death
+  - emergent event
+  - labs (getting results back)
+- there should be multiple things happening at once and trackable - MAYBE as a Kaban style board? or are there role playing turn based bgames that work like this?

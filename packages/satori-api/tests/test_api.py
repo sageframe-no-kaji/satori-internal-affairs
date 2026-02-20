@@ -319,6 +319,64 @@ def test_two_identical_action_sequences_produce_identical_states():
 
 
 # ---------------------------------------------------------------------------
+# playable_actions field
+# ---------------------------------------------------------------------------
+
+
+def test_create_session_returns_playable_actions():
+    """SessionResponse must include a playable_actions list."""
+    resp = client.post("/api/sessions", json={"case_path": EXAMPLE_CASE})
+    data = resp.json()
+    assert "playable_actions" in data
+    assert isinstance(data["playable_actions"], list)
+    assert len(data["playable_actions"]) > 0
+
+
+def test_initial_playable_actions_content():
+    """At game start playable_actions must contain exactly the three root actions."""
+    resp = client.post("/api/sessions", json={"case_path": EXAMPLE_CASE})
+    playable = set(resp.json()["playable_actions"])
+    assert playable == {"history_general", "physical_exam_general", "emergency_intervention"}
+
+
+def test_execute_action_response_has_playable_actions():
+    """ActionResponse must include a playable_actions list."""
+    sid = _start_session()
+    resp = client.post(
+        f"/api/sessions/{sid}/actions", json={"action": "history_general"}
+    )
+    data = resp.json()
+    assert "playable_actions" in data
+    assert isinstance(data["playable_actions"], list)
+
+
+def test_playable_actions_updates_after_history_general():
+    """After history_general, subcategory actions must surface and history_general must drop."""
+    sid = _start_session()
+    resp = client.post(
+        f"/api/sessions/{sid}/actions", json={"action": "history_general"}
+    )
+    playable = set(resp.json()["playable_actions"])
+    # Subcategory actions must appear
+    assert "order_labs:cbc" in playable
+    assert "order_labs:metabolic_panel" in playable
+    assert "history_focused:medications" in playable
+    assert "physical_exam_focused:neuro" in playable
+    # history_general must drop — node_01 is now revealed
+    assert "history_general" not in playable
+    # physical_exam_general still available (not yet revealed)
+    assert "physical_exam_general" in playable
+
+
+def test_get_session_returns_playable_actions():
+    """GET /api/sessions/{id} must also include playable_actions."""
+    resp = client.post("/api/sessions", json={"case_path": EXAMPLE_CASE})
+    sid = resp.json()["session_id"]
+    get_resp = client.get(f"/api/sessions/{sid}")
+    assert "playable_actions" in get_resp.json()
+
+
+# ---------------------------------------------------------------------------
 # Node content
 # ---------------------------------------------------------------------------
 
