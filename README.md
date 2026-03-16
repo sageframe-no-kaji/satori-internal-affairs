@@ -6,6 +6,8 @@ This is not a quiz. There is no multiple choice. The goal is not to guess the di
 
 The goal is to learn how doctors think.
 
+**Development Process:** This project was built using the [Ho System](https://atmarcus.net/work/ho-system), a structured methodology for human-AI collaborative development. The human makes every design decision. The AI implements under direction. There is verification at every step.
+
 ---
 
 ## Why This Exists
