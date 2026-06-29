@@ -299,6 +299,7 @@ class NodeTimer(BaseModel):
     pause_conditions: list[Condition] | None = Field(None, description="Conditions that pause the timer")
     stages: list[TimerStage] | None = Field(None, description="Progressive effects at specific time points")
     on_expire: list[Effect] = Field(..., min_length=1, description="Effects when timer reaches zero")
+    diegetic: bool = Field(False, description="Whether the player's character knows this timer is running")
 
 
 class InterventionEffect(BaseModel):

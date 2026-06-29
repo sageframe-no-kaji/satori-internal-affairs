@@ -23,6 +23,7 @@ class EventType(StrEnum):
     ACTION_LOCKED = "action_locked"
     PENDING_REVEAL_STARTED = "pending_reveal_started"
     CASE_ENDED = "case_ended"
+    WAITED = "waited"
 
 
 @dataclass(frozen=True)
@@ -139,3 +140,15 @@ class CaseEndedEvent(Event):
     type: EventType = field(init=False, default=EventType.CASE_ENDED)
     outcome_tier: str  # OutcomeTierLevel value
     end_reason: str  # description of what triggered the end
+
+
+@dataclass(frozen=True)
+class WaitedEvent(Event):
+    """Player chose to wait/observe without clinical action.
+
+    Emitted as the first event when a wait:N action is executed.
+    The UI uses this to narrate 'N minutes pass' in the event log.
+    """
+
+    type: EventType = field(init=False, default=EventType.WAITED)
+    duration_minutes: int

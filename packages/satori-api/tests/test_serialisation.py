@@ -145,3 +145,53 @@ def test_events_to_responses_event_types_are_strings(engine: SatoriEngine):
         assert isinstance(r.type, str)
         # Must not contain enum class noise like "<EventType.x: 'x'>"
         assert "<" not in r.type and ">" not in r.type
+
+
+# ---------------------------------------------------------------------------
+# visible_timers serialisation
+# ---------------------------------------------------------------------------
+
+
+def test_state_to_response_has_visible_timers_field(engine: SatoriEngine):
+    """state_to_response must include a visible_timers list."""
+    state = engine.get_state()
+    resp = state_to_response(state)
+    assert hasattr(resp, "visible_timers")
+    assert isinstance(resp.visible_timers, list)
+
+
+def test_state_to_response_visible_timers_empty_at_start(engine: SatoriEngine):
+    """At game start with no diegetic timers, visible_timers is an empty list."""
+    resp = state_to_response(engine.get_state())
+    assert resp.visible_timers == []
+
+
+def test_state_to_response_visible_timers_populated_after_lab_order():
+    """After ordering a lab, visible_timers contains a pending_reveal entry."""
+    case = validate_case(EXAMPLE_CASE)
+    fresh_engine = SatoriEngine(case)
+    fresh_engine.execute_action("history_general")
+    fresh_engine.execute_action("order_labs:cbc")
+    resp = state_to_response(fresh_engine.get_state())
+    assert len(resp.visible_timers) > 0
+    vt = resp.visible_timers[0]
+    assert vt.source == "pending_reveal"
+    assert vt.node_id == "node_04_cbc_results"
+    assert isinstance(vt.label, str) and len(vt.label) > 0
+    assert isinstance(vt.remaining_minutes, int) and vt.remaining_minutes > 0
+
+
+def test_visible_timer_response_has_correct_fields():
+    """VisibleTimerResponse has all four required fields."""
+    from satori_api.models import VisibleTimerResponse
+
+    vtr = VisibleTimerResponse(
+        label="CBC Results",
+        remaining_minutes=25,
+        source="pending_reveal",
+        node_id="node_04_cbc_results",
+    )
+    assert vtr.label == "CBC Results"
+    assert vtr.remaining_minutes == 25
+    assert vtr.source == "pending_reveal"
+    assert vtr.node_id == "node_04_cbc_results"

@@ -8,7 +8,7 @@ self-contained so the frontend can render without prior context
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -28,14 +28,25 @@ class CreateSessionRequest(BaseModel):
 class ExecuteActionRequest(BaseModel):
     """Body for POST /api/sessions/{id}/actions."""
 
-    action: str = Field(
-        description="Player action string, e.g. 'history_general' or 'order_labs:cbc'."
-    )
+    action: str = Field(description="Player action string, e.g. 'history_general' or 'order_labs:cbc'.")
 
 
 # ---------------------------------------------------------------------------
 # Shared sub-models
 # ---------------------------------------------------------------------------
+
+
+class VisibleTimerResponse(BaseModel):
+    """A diegetic timer the player's character is aware of.
+
+    Derived from pending_reveals (lab/imaging turnaround the player ordered)
+    and active nodes whose timer.diegetic flag is true.
+    """
+
+    label: str
+    remaining_minutes: int
+    source: Literal["pending_reveal", "active_timer"]
+    node_id: str
 
 
 class VitalSignsResponse(BaseModel):
@@ -82,6 +93,7 @@ class GameStateResponse(BaseModel):
     timer_stages: dict[str, int]
     current_vitals: VitalSignsResponse
     available_actions: list[str]
+    visible_timers: list[VisibleTimerResponse]
     case_ended: bool
     outcome_tier: str | None = None
     end_reason: str | None = None

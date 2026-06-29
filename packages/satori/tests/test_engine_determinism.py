@@ -113,16 +113,15 @@ class TestActionExecution:
         order_labs:cbc queues CBC; burn 60 min → eosinophilia set → node_07 activates;
         then history_focused:dietary triggers the reveal.
         """
-        engine.execute_action("history_general")           # unlocks history_focused, order_labs
-        engine.execute_action("order_labs:cbc")            # queues CBC (45 min delay)
+        engine.execute_action("history_general")  # unlocks history_focused, order_labs
+        engine.execute_action("order_labs:cbc")  # queues CBC (45 min delay)
         # Burn time to get CBC result (45+ min delay after 15-min action)
-        engine.execute_action("history_general")           # +15 → 45 total
-        engine.execute_action("history_general")           # +15 → 60 total (CBC ready)
-        engine.execute_action("history_general")           # +15 → ensures reveal processed
+        engine.execute_action("history_general")  # +15 → 45 total
+        engine.execute_action("history_general")  # +15 → 60 total (CBC ready)
+        engine.execute_action("history_general")  # +15 → ensures reveal processed
         state = engine.get_state()
         assert "eosinophilia" in state.flags, (
-            f"Expected eosinophilia flag after CBC. Flags: {state.flags}, "
-            f"Revealed: {state.revealed_nodes}"
+            f"Expected eosinophilia flag after CBC. Flags: {state.flags}, Revealed: {state.revealed_nodes}"
         )
         assert "node_07_dietary_history" in state.active_nodes
         events = engine.execute_action("history_focused:dietary")
@@ -139,7 +138,7 @@ class TestActionExecution:
         node_03 activates when seizure_with_aphasia flag is set (set by node_01
         on history_general reveal).
         """
-        engine.execute_action("history_general")           # unlocks physical_exam_focused; sets seizure_with_aphasia
+        engine.execute_action("history_general")  # unlocks physical_exam_focused; sets seizure_with_aphasia
         state = engine.get_state()
         assert "seizure_with_aphasia" in state.flags
         assert "node_03_neuro_exam" in state.active_nodes
@@ -166,7 +165,7 @@ class TestDelayedReveals:
 
     def test_cbc_not_immediately_revealed(self, engine: SatoriEngine):
         """Check 10: order_labs:cbc → node_04 NOT in revealed_nodes immediately."""
-        self._unlock_order_labs(engine)       # unlocks order_labs
+        self._unlock_order_labs(engine)  # unlocks order_labs
         engine.execute_action("order_labs:cbc")
         state = engine.get_state()
 
@@ -187,7 +186,7 @@ class TestDelayedReveals:
         # history_general: +15 min, unlocks order_labs
         self._unlock_order_labs(engine)
         # Order CBC (15 minutes action cost, 45 minute reveal delay)
-        engine.execute_action("order_labs:cbc")   # t=30
+        engine.execute_action("order_labs:cbc")  # t=30
         # Advance time: need 45 delay minutes to have passed → need t >= 75
         engine.execute_action("history_general")  # t=45
         engine.execute_action("history_general")  # t=60
@@ -340,13 +339,13 @@ class TestInterventions:
           order_imaging:ct_head → queues CT (45 min delay)
           burn 60 min → CT result reveals → sets lesion_found + unlocks start_treatment
         """
-        engine.execute_action("history_general")              # t=15; unlocks phys_focused, order_labs
+        engine.execute_action("history_general")  # t=15; unlocks phys_focused, order_labs
         engine.execute_action("physical_exam_focused:neuro")  # t=30; sets focal_neuro_deficit; unlocks order_imaging
-        engine.execute_action("order_imaging:ct_head")        # t=75; queues CT (45 min delay)
+        engine.execute_action("order_imaging:ct_head")  # t=75; queues CT (45 min delay)
         # Need 45 delay minutes after t=75, so reveal fires at t=120
-        engine.execute_action("history_general")              # t=90
-        engine.execute_action("history_general")              # t=105
-        engine.execute_action("history_general")              # t=120 → CT revealed
+        engine.execute_action("history_general")  # t=90
+        engine.execute_action("history_general")  # t=105
+        engine.execute_action("history_general")  # t=120 → CT revealed
         state = engine.get_state()
         assert "lesion_found" in state.flags, (
             f"CT lesion not found after unlock path. Flags: {state.flags}, "
@@ -386,10 +385,10 @@ class TestInterventions:
 
         # Unlock start_treatment the rest of the way
         engine.execute_action("physical_exam_focused:neuro")  # focal_neuro_deficit; unlocks order_imaging
-        engine.execute_action("order_imaging:ct_head")        # queue CT
-        engine.execute_action("history_general")              # burn time
-        engine.execute_action("history_general")              # burn time
-        engine.execute_action("history_general")              # CT revealed → lesion_found, start_treatment unlocked
+        engine.execute_action("order_imaging:ct_head")  # queue CT
+        engine.execute_action("history_general")  # burn time
+        engine.execute_action("history_general")  # burn time
+        engine.execute_action("history_general")  # CT revealed → lesion_found, start_treatment unlocked
 
         state_after_ct = engine.get_state()
         assert "lesion_found" in state_after_ct.flags
@@ -423,14 +422,14 @@ class TestEndConditions:
           7. history_focused:dietary → undercooked_pork_exposure → node_17 activates
           8. start_treatment:albendazole → correct_treatment_started → case ends
         """
-        engine.execute_action("history_general")              # t=15; unlocks focused actions + order_labs
+        engine.execute_action("history_general")  # t=15; unlocks focused actions + order_labs
         engine.execute_action("physical_exam_focused:neuro")  # t=30; focal_neuro_deficit; unlocks order_imaging
-        engine.execute_action("order_labs:cbc")               # t=45; queue CBC (45 min delay)
-        engine.execute_action("order_imaging:ct_head")        # t=90; queue CT (45 min delay)
+        engine.execute_action("order_labs:cbc")  # t=45; queue CBC (45 min delay)
+        engine.execute_action("order_imaging:ct_head")  # t=90; queue CT (45 min delay)
         # Burn time: need t >= 90+45=135 for CT, t >= 45+45=90 for CBC
-        engine.execute_action("history_general")              # t=105
-        engine.execute_action("history_general")              # t=120
-        engine.execute_action("history_general")              # t=135 → both results revealed
+        engine.execute_action("history_general")  # t=105
+        engine.execute_action("history_general")  # t=120
+        engine.execute_action("history_general")  # t=135 → both results revealed
         state = engine.get_state()
         assert "eosinophilia" in state.flags, f"CBC not revealed. Flags: {state.flags}"
         assert "lesion_found" in state.flags, f"CT not revealed. Flags: {state.flags}"
@@ -439,9 +438,7 @@ class TestEndConditions:
         engine.execute_action("history_focused:dietary")
         state = engine.get_state()
         assert "undercooked_pork_exposure" in state.flags
-        assert "node_17_correct_treatment" in state.active_nodes, (
-            f"node_17 not active. Active: {state.active_nodes}"
-        )
+        assert "node_17_correct_treatment" in state.active_nodes, f"node_17 not active. Active: {state.active_nodes}"
 
         # Prescribe albendazole → sets correct_treatment_started → end condition fires
         state = engine.get_state()
@@ -457,9 +454,14 @@ class TestEndConditions:
         """Check 22: Burn 360+ minutes → case ends due to time limit."""
         # Cycle through multiple action types, unlocking more as they become available
         burn_actions = [
-            "history_general", "physical_exam_general", "order_labs:cbc",
-            "order_imaging:ct_head", "consult", "physical_exam_focused:neuro",
-            "history_focused:dietary", "history_focused:medications",
+            "history_general",
+            "physical_exam_general",
+            "order_labs:cbc",
+            "order_imaging:ct_head",
+            "consult",
+            "physical_exam_focused:neuro",
+            "history_focused:dietary",
+            "history_focused:medications",
             "emergency_intervention",
         ]
         action_idx = 0
@@ -485,9 +487,13 @@ class TestEndConditions:
     def test_time_expired_outcome_is_failure(self, engine: SatoriEngine):
         """Check 23: Burning out the clock with no treatment → failure tier."""
         burn_actions = [
-            "history_general", "physical_exam_general", "consult",
-            "order_labs:cbc", "order_imaging:ct_head",
-            "physical_exam_focused:neuro", "history_focused:dietary",
+            "history_general",
+            "physical_exam_general",
+            "consult",
+            "order_labs:cbc",
+            "order_imaging:ct_head",
+            "physical_exam_focused:neuro",
+            "history_focused:dietary",
             "emergency_intervention",
         ]
         action_idx = 0
@@ -679,9 +685,13 @@ class TestPatientCondition:
         # Burn enough time to cross timer stages (node_09 headache progression)
         # Stages are at T+60, T+120, T+150 in the example case
         burn_actions = [
-            "history_general", "physical_exam_general", "consult",
-            "order_labs:cbc", "order_imaging:ct_head",
-            "physical_exam_focused:neuro", "emergency_intervention",
+            "history_general",
+            "physical_exam_general",
+            "consult",
+            "order_labs:cbc",
+            "order_imaging:ct_head",
+            "physical_exam_focused:neuro",
+            "emergency_intervention",
         ]
         action_idx = 0
         for _ in range(20):

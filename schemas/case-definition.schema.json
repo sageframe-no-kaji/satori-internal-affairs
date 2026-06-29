@@ -505,6 +505,11 @@
             "$ref": "#/$defs/Effect"
           },
           "minItems": 1
+        },
+        "diegetic": {
+          "type": "boolean",
+          "description": "Whether the player's character is aware this timer is running. Lab/imaging turnaround and announced wait windows are diegetic; biological deterioration timers are not. Default false.",
+          "default": false
         }
       }
     },

@@ -9,8 +9,8 @@ from dataclasses import replace
 from satori.action_parser import parse_action
 from satori.condition_evaluator import ConditionEvaluator
 from satori.effect_executor import EffectExecutor
-from satori.events import Event, NodeExpiredEvent, NodeRevealedEvent, TimeAdvancedEvent, TimerStageEvent
-from satori.game_state import GameState
+from satori.events import Event, NodeExpiredEvent, NodeRevealedEvent, TimeAdvancedEvent, TimerStageEvent, WaitedEvent
+from satori.game_state import GameState, compute_visible_timers
 from satori.models.case_definition import CaseDefinition, Node, NodeContent
 from satori.state_checkers import StateCheckers
 from satori.timer_manager import TimerManager
@@ -21,6 +21,11 @@ class InvalidActionError(Exception):
     """Raised when a player attempts an unavailable or malformed action."""
 
     pass
+
+
+# Allowed durations for the built-in wait action.
+# Cases never declare these; the engine accepts them unconditionally.
+WAIT_DURATIONS: frozenset[int] = frozenset({15, 30, 60})
 
 
 class CaseValidationError(Exception):
@@ -206,6 +211,9 @@ class SatoriEngine:
         # Compute initial vitals
         state, _ = self.checkers.recompute_vitals(state)
 
+        # Derive visible timers (diegetic pending_reveals + diegetic active timers)
+        state = replace(state, visible_timers=compute_visible_timers(state, self.case))
+
         return state
 
     def execute_action(self, action: str) -> list[Event]:
@@ -243,6 +251,11 @@ class SatoriEngine:
 
         events: list[Event] = []
         base_action, param = parse_action(action)
+
+        # Built-in wait action — intercept before the standard action-cost gate.
+        # Cases never declare "wait"; the engine accepts it unconditionally.
+        if base_action == "wait":
+            return self._execute_wait(param)
 
         # Validate
         if base_action not in self.case.action_costs:
@@ -330,6 +343,111 @@ class SatoriEngine:
         # 9. End condition check
         new_state, end_events = self.checkers.check_end_conditions(new_state)
         events.extend(end_events)
+
+        # 10. Update derived visible_timers field
+        new_state = replace(new_state, visible_timers=compute_visible_timers(new_state, self.case))
+
+        self.state = new_state
+        return events
+
+    def _execute_wait(self, subcategory: str | None) -> list[Event]:
+        """Execute the built-in wait action.
+
+        Validates the subcategory is a permitted duration, emits a WaitedEvent,
+        then runs the standard tick pipeline (timers, pending reveals, activations,
+        vitals, end conditions).
+
+        Args:
+            subcategory: The duration string from "wait:N", or None if bare "wait".
+
+        Returns:
+            List of events starting with WaitedEvent.
+
+        Raises:
+            InvalidActionError: If subcategory is missing, non-integer, or not in WAIT_DURATIONS.
+        """
+        if subcategory is None:
+            raise InvalidActionError("wait requires a duration: wait:15, wait:30, or wait:60")
+        try:
+            duration = int(subcategory)
+        except ValueError:
+            raise InvalidActionError(f"wait duration must be an integer, got {subcategory!r}")
+        if duration not in WAIT_DURATIONS:
+            raise InvalidActionError(f"wait duration must be one of {sorted(WAIT_DURATIONS)}, got {duration}")
+
+        events: list[Event] = [
+            WaitedEvent(timestamp_minutes=self.state.current_time_minutes, duration_minutes=duration)
+        ]
+
+        # Advance time
+        new_state, time_events = self._advance_time(duration, f"wait:{duration}")
+        events.extend(time_events)
+
+        # Advance timers
+        new_state, timer_events = self.timer_mgr.advance_timers(new_state, duration, self.case)
+        events.extend(timer_events)
+
+        # Apply effects from expired timers
+        for event in timer_events:
+            if isinstance(event, NodeExpiredEvent):
+                node = self._node_map.get(event.node_id)
+                if node:
+                    if node.timer:
+                        new_state, expire_events = self.effect_exec.apply_effects(
+                            node.timer.on_expire, new_state, self.case
+                        )
+                        events.extend(expire_events)
+                    if node.effects and node.effects.on_expire:
+                        new_state, expire_events = self.effect_exec.apply_effects(
+                            node.effects.on_expire, new_state, self.case
+                        )
+                        events.extend(expire_events)
+
+        # Apply effects from timer stages crossed
+        for event in timer_events:
+            if isinstance(event, TimerStageEvent):
+                node = self._node_map.get(event.node_id)
+                if node and node.timer and node.timer.stages:
+                    for stage in node.timer.stages:
+                        if stage.at_minutes == event.stage_at_minutes:
+                            new_state, stage_events = self.effect_exec.apply_effects(
+                                stage.effects, new_state, self.case
+                            )
+                            events.extend(stage_events)
+                            break
+
+        # Advance pending reveals
+        new_state, pending_events = self.timer_mgr.advance_pending_reveals(new_state, duration, self.case)
+        events.extend(pending_events)
+
+        # Apply on_reveal effects for completed pending reveals
+        for event in pending_events:
+            if isinstance(event, NodeRevealedEvent):
+                node = self._node_map.get(event.node_id)
+                if node and node.effects and node.effects.on_reveal:
+                    new_state, reveal_events = self.effect_exec.apply_effects(
+                        node.effects.on_reveal, new_state, self.case
+                    )
+                    events.extend(reveal_events)
+
+        # Auto-reveals
+        new_state, auto_events = self.checkers.check_auto_reveals(new_state)
+        events.extend(auto_events)
+
+        # Activation cascade
+        new_state, activation_events = self.checkers.cascade_activations(new_state)
+        events.extend(activation_events)
+
+        # Vitals recomputation
+        new_state, vital_events = self.checkers.recompute_vitals(new_state)
+        events.extend(vital_events)
+
+        # End conditions
+        new_state, end_events = self.checkers.check_end_conditions(new_state)
+        events.extend(end_events)
+
+        # Update derived visible_timers
+        new_state = replace(new_state, visible_timers=compute_visible_timers(new_state, self.case))
 
         self.state = new_state
         return events
@@ -420,10 +538,7 @@ class SatoriEngine:
                 continue
             # Check additional conditions on the reveal rule
             if node.reveal.conditions:
-                if not all(
-                    self.condition_eval._evaluate_condition(c, state)
-                    for c in node.reveal.conditions
-                ):
+                if not all(self.condition_eval._evaluate_condition(c, state) for c in node.reveal.conditions):
                     continue
 
             # Track which base actions have subcategory nodes
@@ -442,9 +557,7 @@ class SatoriEngine:
         # Actions whose nodes are all revealed are intentionally excluded — they have
         # no remaining content to unlock and should not re-appear in the UI.
         all_node_action_bases: set[str] = {
-            node.reveal.action
-            for node in self.case.nodes
-            if node.reveal is not None and node.reveal.action is not None
+            node.reveal.action for node in self.case.nodes if node.reveal is not None and node.reveal.action is not None
         }
         for base_action in state.available_actions:
             if base_action not in all_node_action_bases:

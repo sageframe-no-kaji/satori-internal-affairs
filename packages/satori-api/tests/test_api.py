@@ -296,6 +296,7 @@ def test_event_response_shape():
 
 def test_two_identical_action_sequences_produce_identical_states():
     """Core determinism contract: same case + same actions = same outcome."""
+
     def run_sequence(actions: list[str]) -> dict:  # type: ignore[type-arg]
         sid = _start_session()
         state = None
@@ -342,9 +343,7 @@ def test_initial_playable_actions_content():
 def test_execute_action_response_has_playable_actions():
     """ActionResponse must include a playable_actions list."""
     sid = _start_session()
-    resp = client.post(
-        f"/api/sessions/{sid}/actions", json={"action": "history_general"}
-    )
+    resp = client.post(f"/api/sessions/{sid}/actions", json={"action": "history_general"})
     data = resp.json()
     assert "playable_actions" in data
     assert isinstance(data["playable_actions"], list)
@@ -353,9 +352,7 @@ def test_execute_action_response_has_playable_actions():
 def test_playable_actions_updates_after_history_general():
     """After history_general, subcategory actions must surface and history_general must drop."""
     sid = _start_session()
-    resp = client.post(
-        f"/api/sessions/{sid}/actions", json={"action": "history_general"}
-    )
+    resp = client.post(f"/api/sessions/{sid}/actions", json={"action": "history_general"})
     playable = set(resp.json()["playable_actions"])
     # Subcategory actions must appear
     assert "order_labs:cbc" in playable
@@ -419,3 +416,116 @@ def test_get_revealed_node_after_action():
     assert len(data["narrative_text"]) > 0, "narrative_text must not be empty"
     assert "structured_data" in data
     assert len(data["narrative_text"]) > 0
+
+
+# ---------------------------------------------------------------------------
+# visible_timers in API responses
+# ---------------------------------------------------------------------------
+
+
+def test_create_session_state_has_visible_timers():
+    """POST /api/sessions response state must include visible_timers list."""
+    resp = client.post("/api/sessions", json={"case_path": EXAMPLE_CASE})
+    state = resp.json()["state"]
+    assert "visible_timers" in state
+    assert isinstance(state["visible_timers"], list)
+
+
+def test_initial_visible_timers_empty():
+    """At game start, visible_timers is empty (no pending reveals, no diegetic timers)."""
+    resp = client.post("/api/sessions", json={"case_path": EXAMPLE_CASE})
+    state = resp.json()["state"]
+    assert state["visible_timers"] == []
+
+
+def test_visible_timers_populated_after_lab_order():
+    """After ordering a lab, visible_timers must include the pending result."""
+    sid = _start_session()
+    # Unlock labs
+    client.post(f"/api/sessions/{sid}/actions", json={"action": "history_general"})
+    # Order CBC
+    resp = client.post(f"/api/sessions/{sid}/actions", json={"action": "order_labs:cbc"})
+    state = resp.json()["state"]
+    visible_timers = state["visible_timers"]
+    assert len(visible_timers) > 0
+    cbc_vt = next((vt for vt in visible_timers if vt["node_id"] == "node_04_cbc_results"), None)
+    assert cbc_vt is not None, "CBC pending reveal should appear in visible_timers"
+    assert cbc_vt["source"] == "pending_reveal"
+    assert isinstance(cbc_vt["label"], str) and len(cbc_vt["label"]) > 0
+    assert cbc_vt["remaining_minutes"] > 0
+
+
+def test_visible_timers_shape():
+    """Each visible_timer entry has the expected four fields."""
+    sid = _start_session()
+    client.post(f"/api/sessions/{sid}/actions", json={"action": "history_general"})
+    resp = client.post(f"/api/sessions/{sid}/actions", json={"action": "order_labs:cbc"})
+    state = resp.json()["state"]
+    for vt in state["visible_timers"]:
+        assert "label" in vt
+        assert "remaining_minutes" in vt
+        assert "source" in vt
+        assert "node_id" in vt
+        assert vt["source"] in ("pending_reveal", "active_timer")
+        assert isinstance(vt["remaining_minutes"], int)
+
+
+def test_execute_action_response_has_visible_timers():
+    """ActionResponse state must include visible_timers."""
+    sid = _start_session()
+    resp = client.post(f"/api/sessions/{sid}/actions", json={"action": "history_general"})
+    state = resp.json()["state"]
+    assert "visible_timers" in state
+    assert isinstance(state["visible_timers"], list)
+
+
+# ---------------------------------------------------------------------------
+# Wait action via API
+# ---------------------------------------------------------------------------
+
+
+def test_wait_action_succeeds_via_api():
+    """POST /api/sessions/{id}/actions with wait:15 must succeed."""
+    sid = _start_session()
+    resp = client.post(f"/api/sessions/{sid}/actions", json={"action": "wait:15"})
+    assert resp.status_code == 200
+
+
+def test_wait_action_advances_time():
+    """wait:30 must advance the game clock by 30 minutes."""
+    sid = _start_session()
+    initial_time = client.get(f"/api/sessions/{sid}").json()["state"]["current_time_minutes"]
+    resp = client.post(f"/api/sessions/{sid}/actions", json={"action": "wait:30"})
+    new_time = resp.json()["state"]["current_time_minutes"]
+    assert new_time == initial_time + 30
+
+
+def test_wait_action_emits_waited_event():
+    """wait:15 must emit a 'waited' event in the response."""
+    sid = _start_session()
+    resp = client.post(f"/api/sessions/{sid}/actions", json={"action": "wait:15"})
+    events = resp.json()["events"]
+    waited_events = [e for e in events if e["type"] == "waited"]
+    assert len(waited_events) == 1
+    assert waited_events[0]["data"]["duration_minutes"] == 15
+
+
+def test_wait_invalid_duration_returns_400():
+    """wait:45 is not allowed and must return 400."""
+    sid = _start_session()
+    resp = client.post(f"/api/sessions/{sid}/actions", json={"action": "wait:45"})
+    assert resp.status_code == 400
+
+
+def test_wait_no_subcategory_returns_400():
+    """Bare 'wait' without a duration must return 400."""
+    sid = _start_session()
+    resp = client.post(f"/api/sessions/{sid}/actions", json={"action": "wait"})
+    assert resp.status_code == 400
+
+
+def test_wait_not_in_playable_actions():
+    """wait must NOT appear in playable_actions list."""
+    resp = client.post("/api/sessions", json={"case_path": EXAMPLE_CASE})
+    playable = resp.json()["playable_actions"]
+    assert not any(a.startswith("wait") for a in playable)

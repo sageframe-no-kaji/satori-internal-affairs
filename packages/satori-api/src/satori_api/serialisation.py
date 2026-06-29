@@ -13,6 +13,7 @@ from satori_api.models import (
     GameStateResponse,
     PatientContextResponse,
     SessionResponse,
+    VisibleTimerResponse,
     VitalSignsResponse,
 )
 
@@ -43,6 +44,15 @@ def state_to_response(state: GameState) -> GameStateResponse:
         timer_stages=dict(state.timer_stages),
         current_vitals=vitals_to_response(state.current_vitals),
         available_actions=sorted(state.available_actions),
+        visible_timers=[
+            VisibleTimerResponse(
+                label=vt.label,
+                remaining_minutes=vt.remaining_minutes,
+                source=vt.source,
+                node_id=vt.node_id,
+            )
+            for vt in state.visible_timers
+        ],
         case_ended=state.case_ended,
         outcome_tier=state.outcome_tier,
         end_reason=state.end_reason,

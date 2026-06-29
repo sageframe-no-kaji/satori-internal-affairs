@@ -15,7 +15,6 @@ import pytest
 from satori.engine import SatoriEngine
 from satori.models.case_definition import CaseDefinition
 
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
@@ -41,11 +40,13 @@ def engine(maria_santos_case: CaseDefinition) -> SatoriEngine:
 
 def test_initial_playable_actions_exact(engine: SatoriEngine) -> None:
     """At game start the playable set is exactly the three root-level actions."""
-    expected = frozenset({
-        "emergency_intervention",
-        "history_general",
-        "physical_exam_general",
-    })
+    expected = frozenset(
+        {
+            "emergency_intervention",
+            "history_general",
+            "physical_exam_general",
+        }
+    )
     assert engine.get_playable_actions() == expected
 
 
@@ -180,14 +181,16 @@ def test_playable_set_after_both_generals_exact(engine: SatoriEngine) -> None:
     """After history_general + physical_exam_general, verify the full playable set."""
     engine.execute_action("history_general")
     engine.execute_action("physical_exam_general")
-    expected = frozenset({
-        "emergency_intervention",
-        "history_focused:family",
-        "history_focused:medications",
-        "order_labs:cbc",
-        "order_labs:metabolic_panel",
-        "physical_exam_focused:neuro",
-    })
+    expected = frozenset(
+        {
+            "emergency_intervention",
+            "history_focused:family",
+            "history_focused:medications",
+            "order_labs:cbc",
+            "order_labs:metabolic_panel",
+            "physical_exam_focused:neuro",
+        }
+    )
     assert engine.get_playable_actions() == expected
 
 
