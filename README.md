@@ -141,15 +141,21 @@ make dev-frontend       # SvelteKit dev server
 
 **Phase 2 — Gameplay Surface + Narrative Voice: in planning.** Surfacing what the engine already simulates: a mission-control dashboard, visible diegetic timers, emergency mode rendering, a first-class wait/observe action, diagnostic-rigor scoring, and a live LLM narrator in the *Grey's Anatomy* register. Ships as `v0.7`.
 
-See the [System Design](docs/architecture/system-design.md) for current architectural commitments and the [Phase 2 Ho Overview](docs/architecture/phase-2-ho-overview.md) for the build sequence.
+See the [System Design](ho-process/satori-internal-affairs-system-design.md) for current architectural commitments and the [Ho Overview](ho-process/ho-overview.md) for the build sequence.
 
 ## Documentation
 
-- [Seed Document](docs/satori-internal-affairs-seed.md) — the original architectural vision and design rationale
-- [System Design](docs/architecture/system-design.md) — canonical architectural reference (Phase 1 reality + Phase 2 commitments)
-- [Phase 2 Ho Overview](docs/architecture/phase-2-ho-overview.md) — current build sequence
+**Public technical references**
 - [Game Design Pitch](docs/architecture/game-design-pitch.md) — public-facing design overview
-- [Phase 1 Gameplan](docs/architecture/phase-1-gameplan.md) — historical record of the Phase 1 plan
+- [Case Data Structure](docs/architecture/case-data-structure.md) — the node-graph architecture
+- [Satori Engine API](docs/architecture/satori-engine-api.md) — public API reference for satori + llm-client
+
+**The Kamae chain (build record)** — under [`ho-process/`](ho-process/)
+- [Seed](ho-process/satori-internal-affairs-seed.md) — Kamae 1: the original architectural vision and design rationale
+- [System Design](ho-process/satori-internal-affairs-system-design.md) — Kamae 2: canonical architectural reference
+- [Ho Overview](ho-process/ho-overview.md) — Kamae 4: current build sequence (Phase 2 → v0.7)
+- [Per-ho documents](ho-process/hos/) — Kamae 5: per-session scope and execution specs
+- [Devlog](ho-process/devlog/) — post-session reviews and learning docs
 
 ## License
 
