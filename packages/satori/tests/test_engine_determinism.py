@@ -52,10 +52,13 @@ def engine(maria_santos_case: CaseDefinition) -> SatoriEngine:
 class TestInitialization:
     """Acceptance checks 1-5: engine initialization."""
 
-    def test_case_loads_and_has_18_nodes(self, engine: SatoriEngine, maria_santos_case: CaseDefinition):
-        """Check 1: Load Maria Santos case and verify node map."""
+    def test_case_loads_and_has_19_nodes(self, engine: SatoriEngine, maria_santos_case: CaseDefinition):
+        """Check 1: Load Maria Santos case and verify node map.
+
+        19 nodes after P2-H07 added node_18_empirical_unlock (was 18).
+        """
         assert engine.case == maria_santos_case
-        assert len(engine.case.nodes) == 18
+        assert len(engine.case.nodes) == 19
 
     def test_starts_active_nodes_are_active_at_init(self, engine: SatoriEngine):
         """Check 2: Nodes with starts_active=True are in active_nodes."""
@@ -333,24 +336,34 @@ class TestInterventions:
     def _unlock_start_treatment(self, engine: SatoriEngine) -> None:
         """Helper: walk the minimal unlock path to make start_treatment available.
 
-        Unlock chain:
+        Unlock chain (P2-H07 empirical path):
           history_general → unlocks physical_exam_focused + order_labs
+          order_labs:cbc → queues CBC (30-min delay)
           physical_exam_focused:neuro → sets focal_neuro_deficit, unlocks order_imaging
-          order_imaging:ct_head → queues CT (45 min delay)
-          burn 60 min → CT result reveals → sets lesion_found + unlocks start_treatment
+          order_imaging:ct_head → queues CT (45-min delay)
+          burn time until both results arrive → eosinophilia + ring_enhancing_lesion
+            → node_18_empirical_unlock activates → unlocks start_treatment
+
+        Note: CT no longer unlocks start_treatment directly (P2-H07 removed that
+        to enforce the empirical or confirmatory unlock requirement).
         """
         engine.execute_action("history_general")  # t=15; unlocks phys_focused, order_labs
-        engine.execute_action("physical_exam_focused:neuro")  # t=30; sets focal_neuro_deficit; unlocks order_imaging
-        engine.execute_action("order_imaging:ct_head")  # t=75; queues CT (45 min delay)
-        # Need 45 delay minutes after t=75, so reveal fires at t=120
-        engine.execute_action("history_general")  # t=90
-        engine.execute_action("history_general")  # t=105
-        engine.execute_action("history_general")  # t=120 → CT revealed
+        engine.execute_action("order_labs:cbc")  # t=17; queues CBC (30-min delay, fires at t=47)
+        engine.execute_action("physical_exam_focused:neuro")  # t=32; sets focal_neuro_deficit; unlocks order_imaging
+        engine.execute_action("order_imaging:ct_head")  # t=77; queues CT (45-min delay, fires at t=122)
+        # Burn time until CT result arrives (45 min after t=77 = t=122)
+        engine.execute_action("history_general")  # t=92
+        engine.execute_action("history_general")  # t=107
+        engine.execute_action("history_general")  # t=122 → CT (and CBC already) revealed
         state = engine.get_state()
         assert "lesion_found" in state.flags, (
             f"CT lesion not found after unlock path. Flags: {state.flags}, "
             f"Revealed: {state.revealed_nodes}, Pending: {state.pending_reveals}"
         )
+        assert "eosinophilia" in state.flags, (
+            f"CBC eosinophilia not set. Flags: {state.flags}, Pending: {state.pending_reveals}"
+        )
+        assert "ring_enhancing_lesion" in state.flags, f"ring_enhancing_lesion not set by CT. Flags: {state.flags}"
 
     def test_steroids_sets_wrong_treatment_flag(self, engine: SatoriEngine):
         """Check 19: start_treatment:steroids → wrong_treatment_steroids flag set.
@@ -383,15 +396,18 @@ class TestInterventions:
         state_before = engine.get_state()
         assert "node_09_headache_progression" in state_before.timers
 
-        # Unlock start_treatment the rest of the way
+        # Unlock start_treatment via empirical path (P2-H07):
+        # CBC (eosinophilia) + CT (ring_enhancing_lesion) → empirical_unlock fires
+        engine.execute_action("order_labs:cbc")  # queue CBC (30-min delay)
         engine.execute_action("physical_exam_focused:neuro")  # focal_neuro_deficit; unlocks order_imaging
-        engine.execute_action("order_imaging:ct_head")  # queue CT
+        engine.execute_action("order_imaging:ct_head")  # queue CT (45-min delay)
         engine.execute_action("history_general")  # burn time
         engine.execute_action("history_general")  # burn time
-        engine.execute_action("history_general")  # CT revealed → lesion_found, start_treatment unlocked
+        engine.execute_action("history_general")  # CBC + CT revealed → eosinophilia + ring_enhancing_lesion
 
         state_after_ct = engine.get_state()
         assert "lesion_found" in state_after_ct.flags
+        assert "eosinophilia" in state_after_ct.flags
 
         # Prescribe steroids
         engine.execute_action("start_treatment:steroids")

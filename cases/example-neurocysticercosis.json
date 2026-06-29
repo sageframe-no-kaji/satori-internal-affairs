@@ -447,15 +447,15 @@
           },
           {
             "type": "set_flag",
+            "target": "ring_enhancing_lesion"
+          },
+          {
+            "type": "set_flag",
             "target": "tumor_suspected"
           },
           {
             "type": "unlock_action",
             "target": "consult"
-          },
-          {
-            "type": "unlock_action",
-            "target": "start_treatment"
           }
         ]
       },
@@ -1074,6 +1074,18 @@
                 "target": "lesion_found"
               }
             ]
+          },
+          {
+            "conditions": [
+              {
+                "type": "flag_set",
+                "target": "eosinophilia"
+              },
+              {
+                "type": "flag_set",
+                "target": "ring_enhancing_lesion"
+              }
+            ]
           }
         ]
       },
@@ -1105,6 +1117,37 @@
         "category": "medical",
         "impact": "critical"
       }
+    },
+    {
+      "id": "node_18_empirical_unlock",
+      "type": "behavioral",
+      "content": {
+        "narrative_text": "Clinical suspicion for neurocysticercosis now sufficient for empirical antiparasitic treatment: eosinophilia and ring-enhancing lesion together raise the probability high enough to justify commitment without awaiting confirmatory imaging or serology."
+      },
+      "activation": {
+        "paths": [
+          {
+            "conditions": [
+              {
+                "type": "flag_set",
+                "target": "eosinophilia"
+              },
+              {
+                "type": "flag_set",
+                "target": "ring_enhancing_lesion"
+              }
+            ]
+          }
+        ],
+        "on_activate": [
+          {
+            "type": "unlock_action",
+            "target": "start_treatment"
+          }
+        ]
+      },
+      "reveal": null,
+      "teaching_note": "Eosinophilia plus ring-enhancing lesion is suspicion-grade evidence for neurocysticercosis. Committing to albendazole at this point is clinically defensible — the Good tier. Waiting for MRI scolex sign or serology is cautious and earns Optimal."
     }
   ],
   "outcome_evaluation": {

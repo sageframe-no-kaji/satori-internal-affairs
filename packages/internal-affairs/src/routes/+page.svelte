@@ -93,6 +93,7 @@
     <OutcomeScreen
       outcome_tier={game.gameState.outcome_tier}
       end_reason={game.gameState.end_reason}
+      outcome_narrative={game.outcomeNarrative}
       onReset={() => game.reset()}
     />
   {/if}

@@ -30,6 +30,7 @@ from satori_api.narrator_bridge import narrate_events
 from satori_api.serialisation import (
     build_session_response,
     events_to_responses,
+    resolve_tier_narrative,
     state_to_response,
 )
 
@@ -182,6 +183,7 @@ def execute_action(session_id: str, body: ExecuteActionRequest) -> ActionRespons
         case_ended=state.case_ended,
         outcome_tier=state.outcome_tier,
         end_reason=state.end_reason,
+        outcome_narrative=resolve_tier_narrative(engine.case, state.outcome_tier),
     )
 
 

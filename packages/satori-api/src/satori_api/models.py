@@ -151,6 +151,7 @@ class ActionResponse(BaseModel):
     case_ended: bool
     outcome_tier: str | None = None
     end_reason: str | None = None
+    outcome_narrative: str | None = None
 
 
 class NodeContentResponse(BaseModel):

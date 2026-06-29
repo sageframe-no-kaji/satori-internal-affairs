@@ -529,3 +529,85 @@ def test_wait_not_in_playable_actions():
     resp = client.post("/api/sessions", json={"case_path": EXAMPLE_CASE})
     playable = resp.json()["playable_actions"]
     assert not any(a.startswith("wait") for a in playable)
+
+
+# ---------------------------------------------------------------------------
+# Tier narrative in API response (P2-H07)
+# ---------------------------------------------------------------------------
+
+
+def _wait_for_pending(sid: str, node_id: str, step: str = "wait:15") -> None:
+    """Poll until node_id is no longer in pending_reveals."""
+    for _ in range(12):
+        resp = client.post(f"/api/sessions/{sid}/actions", json={"action": step})
+        data = resp.json()
+        if resp.status_code != 200:
+            break  # action may fail if case ended
+        if node_id not in data.get("state", {}).get("pending_reveals", {}):
+            break
+
+
+def _advance_to_empirical_treatment(sid: str) -> None:
+    """Helper: reach the empirical unlock (eosinophilia + ring_enhancing_lesion)
+    and execute start_treatment:albendazole to end the case in Good tier."""
+    client.post(f"/api/sessions/{sid}/actions", json={"action": "history_general"})
+    client.post(f"/api/sessions/{sid}/actions", json={"action": "physical_exam_focused:neuro"})
+    # Order CBC (30-min delay) and CT (45-min delay), then wait for results
+    client.post(f"/api/sessions/{sid}/actions", json={"action": "order_labs:cbc"})
+    client.post(f"/api/sessions/{sid}/actions", json={"action": "order_imaging:ct_head"})
+    _wait_for_pending(sid, "node_04_cbc_results", step="wait:15")
+    _wait_for_pending(sid, "node_06_ct_lesion", step="wait:15")
+    client.post(f"/api/sessions/{sid}/actions", json={"action": "start_treatment:albendazole"})
+
+
+def test_action_response_has_outcome_narrative_field():
+    """Every ActionResponse must include an outcome_narrative field (null when game ongoing)."""
+    sid = _start_session()
+    resp = client.post(f"/api/sessions/{sid}/actions", json={"action": "history_general"})
+    data = resp.json()
+    assert "outcome_narrative" in data
+    assert data["outcome_narrative"] is None
+
+
+def test_outcome_narrative_populated_on_case_end():
+    """On case end, outcome_narrative must be a non-empty string."""
+    sid = _start_session()
+    client.post(f"/api/sessions/{sid}/actions", json={"action": "history_general"})
+    client.post(f"/api/sessions/{sid}/actions", json={"action": "physical_exam_focused:neuro"})
+    client.post(f"/api/sessions/{sid}/actions", json={"action": "order_labs:cbc"})
+    client.post(f"/api/sessions/{sid}/actions", json={"action": "order_imaging:ct_head"})
+    _wait_for_pending(sid, "node_04_cbc_results")
+    _wait_for_pending(sid, "node_06_ct_lesion")
+    final = client.post(f"/api/sessions/{sid}/actions", json={"action": "start_treatment:albendazole"})
+    data = final.json()
+    assert data["case_ended"] is True
+    assert data["outcome_narrative"] is not None
+    assert isinstance(data["outcome_narrative"], str)
+    assert len(data["outcome_narrative"]) > 0
+
+
+def test_outcome_narrative_matches_case_tier_text():
+    """The outcome_narrative must match the authored narrative for the matched tier."""
+    import json as _json
+    from pathlib import Path
+
+    # Load the case to get the authored narrative
+    case_path = Path(__file__).parents[3] / "cases" / "example-neurocysticercosis.json"
+    with open(case_path, encoding="utf-8") as f:
+        case_data = _json.load(f)
+    tiers_by_name = {t["tier"]: t["narrative"] for t in case_data["outcome_evaluation"]["tiers"]}
+
+    sid = _start_session()
+    client.post(f"/api/sessions/{sid}/actions", json={"action": "history_general"})
+    client.post(f"/api/sessions/{sid}/actions", json={"action": "physical_exam_focused:neuro"})
+    client.post(f"/api/sessions/{sid}/actions", json={"action": "order_labs:cbc"})
+    client.post(f"/api/sessions/{sid}/actions", json={"action": "order_imaging:ct_head"})
+    _wait_for_pending(sid, "node_04_cbc_results")
+    _wait_for_pending(sid, "node_06_ct_lesion")
+    final = client.post(f"/api/sessions/{sid}/actions", json={"action": "start_treatment:albendazole"})
+    data = final.json()
+    assert data["case_ended"] is True
+    tier = data["outcome_tier"]
+    assert tier is not None
+    expected_narrative = tiers_by_name[tier]
+    assert data["outcome_narrative"] == expected_narrative

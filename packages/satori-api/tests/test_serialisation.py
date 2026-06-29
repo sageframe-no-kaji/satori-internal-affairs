@@ -10,6 +10,7 @@ from satori_api.serialisation import (
     build_session_response,
     events_to_responses,
     patient_to_response,
+    resolve_tier_narrative,
     state_to_response,
     vitals_to_response,
 )
@@ -195,3 +196,53 @@ def test_visible_timer_response_has_correct_fields():
     assert vtr.remaining_minutes == 25
     assert vtr.source == "pending_reveal"
     assert vtr.node_id == "node_04_cbc_results"
+
+
+# ---------------------------------------------------------------------------
+# resolve_tier_narrative (P2-H07)
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture(scope="module")
+def case_def():
+    return validate_case(EXAMPLE_CASE)
+
+
+def test_resolve_tier_narrative_optimal(case_def):
+    """resolve_tier_narrative returns the optimal tier narrative for 'optimal'."""
+    narrative = resolve_tier_narrative(case_def, "optimal")
+    assert narrative is not None
+    assert "Maria" in narrative  # authored text mentions her name
+    assert isinstance(narrative, str) and len(narrative) > 0
+
+
+def test_resolve_tier_narrative_good(case_def):
+    """resolve_tier_narrative returns the good tier narrative for 'good'."""
+    narrative = resolve_tier_narrative(case_def, "good")
+    assert narrative is not None
+    assert isinstance(narrative, str) and len(narrative) > 0
+
+
+def test_resolve_tier_narrative_failure(case_def):
+    """resolve_tier_narrative returns the failure tier narrative for 'failure'."""
+    narrative = resolve_tier_narrative(case_def, "failure")
+    assert narrative is not None
+    assert "28" in narrative  # authored text mentions her age
+
+
+def test_resolve_tier_narrative_none_tier(case_def):
+    """resolve_tier_narrative returns None when outcome_tier is None."""
+    assert resolve_tier_narrative(case_def, None) is None
+
+
+def test_resolve_tier_narrative_unknown_tier(case_def):
+    """resolve_tier_narrative returns None for an unrecognised tier string."""
+    assert resolve_tier_narrative(case_def, "legendary") is None
+
+
+def test_resolve_tier_narratives_all_tiers_present(case_def):
+    """Every defined tier in the case must have a non-empty narrative."""
+    for tier in case_def.outcome_evaluation.tiers:
+        narrative = resolve_tier_narrative(case_def, tier.tier.value)
+        assert narrative is not None, f"Missing narrative for tier: {tier.tier}"
+        assert len(narrative) > 0

@@ -18,6 +18,28 @@ from satori_api.models import (
 )
 
 
+def resolve_tier_narrative(case: CaseDefinition, outcome_tier: str | None) -> str | None:
+    """Return the authored narrative text for the matched outcome tier.
+
+    Walks case.outcome_evaluation.tiers and returns the first tier whose
+    tier value matches outcome_tier.  Returns None if outcome_tier is None
+    or no matching tier is found.
+
+    Args:
+        case: The loaded case definition.
+        outcome_tier: The tier string from GameState (e.g. "optimal", "good").
+
+    Returns:
+        The narrative string for that tier, or None.
+    """
+    if outcome_tier is None:
+        return None
+    for tier in case.outcome_evaluation.tiers:
+        if tier.tier.value == outcome_tier:
+            return tier.narrative
+    return None
+
+
 def vitals_to_response(vitals: object) -> VitalSignsResponse:  # type: ignore[type-arg]
     """Convert a VitalSigns Pydantic model to a VitalSignsResponse."""
     return VitalSignsResponse(
