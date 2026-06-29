@@ -8,9 +8,9 @@
 
 ## What This Document Is
 
-The build sequence for Phase 2. It takes the Phase 2 commitments locked in [`system-design.md`](system-design.md) and turns them into an ordered sequence of bounded sessions. Each ho is one working session; each section here is what gets framed before that session begins.
+The build sequence for Phase 2. It takes the Phase 2 commitments locked in [`satori-internal-affairs-system-design.md`](satori-internal-affairs-system-design.md) and turns them into an ordered sequence of bounded sessions. Each ho is one working session; each section here is what gets framed before that session begins.
 
-This document is intentionally lighter than per-ho task specs. Individual ho documents live under `tasks/` and are written at session start using the same workflow used through Phase 1.
+This document is intentionally lighter than per-ho documents. Each ho's K5 doc lives under [`hos/`](hos/) and is written at session start using the same workflow used through Phase 1.
 
 ---
 
@@ -168,6 +168,6 @@ None at the Phase level beyond what is rendered inline above. Deferred *features
 
 ## How to Use This Document
 
-When opening a Phase 2 ho, the practitioner reads the relevant section here, then writes the per-ho task spec under `tasks/P2-H##-agent-task-*.md` using the project's existing dandori format. The task spec inherits the in-scope / out-of-scope bounds from this document and adds the implementation-level acceptance criteria, verification gates, and commit format.
+When opening a Phase 2 ho, the practitioner reads the relevant section here, then writes the per-ho document under `hos/P2-H##-<slug>.md` using the project's existing Ri-compressed format (K5 framing + dandori execution in one file). The per-ho document inherits the in-scope / out-of-scope bounds from this document and adds the implementation-level acceptance criteria, verification gates, and commit format. If a ho needs to decompose into multiple agent tasks, they live under `agent-tasks/` as `Ho-NN-AT-MM.md`.
 
 The phase ships as `v0.7` when all eight hos are complete and Maria Santos plays end-to-end on the new dashboard with live narration.

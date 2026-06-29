@@ -142,7 +142,7 @@ Deployment, hosting, and persistence are deferred to Phase 6.
 
 Cases are directed graphs of **nodes** wired by **flags**, animated by **timers**, and changed by **effects**. The schema is `schemas/case-definition.schema.json`. The Pydantic mirror is `packages/satori/src/satori/models/case_definition.py`.
 
-The deep treatment lives in [`case-data-structure.md`](case-data-structure.md). The public engine API lives in [`satori-engine-api.md`](satori-engine-api.md). This document does not duplicate them.
+The deep treatment lives in [`case-data-structure.md`](../docs/architecture/case-data-structure.md). The public engine API lives in [`satori-engine-api.md`](../docs/architecture/satori-engine-api.md). This document does not duplicate them.
 
 ### Phase 1 commitments still in force
 
@@ -276,13 +276,13 @@ Phases 3 and beyond are not committed yet. They are the project arc as currently
 
 These elaborate specific subsystems. They are part of the system design by reference.
 
-- [`case-data-structure.md`](case-data-structure.md) — the node-graph architecture in depth, walked through with the Maria Santos case
-- [`satori-engine-api.md`](satori-engine-api.md) — the public API of `satori` and `llm-client` packages
+- [`case-data-structure.md`](../docs/architecture/case-data-structure.md) — the node-graph architecture in depth, walked through with the Maria Santos case
+- [`satori-engine-api.md`](../docs/architecture/satori-engine-api.md) — the public API of `satori` and `llm-client` packages
 - [`example-case-node-validation.md`](example-case-node-validation.md) — pre-schema validation of the example case
 - [`future-features.md`](future-features.md) — the deferred-decisions register (F-001 through F-008)
-- [`game-design-pitch.md`](game-design-pitch.md) — public-facing design pitch; source material for the Phase 2 mechanical and UI commitments above
-- [`P1-H03-llm-abstraction-layer.md`](P1-H03-llm-abstraction-layer.md) — learning doc on the llm-client design
-- [`P1-H04-case-generation-pipeline.md`](P1-H04-case-generation-pipeline.md) — learning doc on Anamnesis
+- [`game-design-pitch.md`](../docs/architecture/game-design-pitch.md) — public-facing design pitch; source material for the Phase 2 mechanical and UI commitments above
+- [`P1-H03-learning-llm-abstraction-layer.md`](devlog/P1-H03-learning-llm-abstraction-layer.md) — learning doc on the llm-client design
+- [`P1-H04-learning-case-generation-pipeline.md`](devlog/P1-H04-learning-case-generation-pipeline.md) — learning doc on Anamnesis
 - [`phase-1-gameplan.md`](phase-1-gameplan.md) — historical Phase 1 plan; preserved for record
 
 ---
