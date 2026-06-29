@@ -1,10 +1,10 @@
 # Project Map
 
-**Last updated:** 2026-02-18
+**Last updated:** 2026-06-29
 
-This is an interactive medical mystery game where teenagers play as doctors diagnosing patients. The project is split into four packages inside a monorepo. **Satori** is the game engine — it runs cases deterministically (same actions always produce the same outcome). **Anamnesis** generates those cases using an LLM. **LLM Client** is the provider-agnostic bridge to whatever AI provider we use. **Internal Affairs** is the web frontend players actually see.
+This is an interactive medical mystery game where teenagers play as doctors diagnosing patients. The project is split into five packages inside a monorepo. **Satori** is the game engine — it runs cases deterministically (same actions always produce the same outcome). **Anamnesis** generates those cases using an LLM. **LLM Client** is the provider-agnostic bridge to whatever AI provider we use. **Satori-API** is the FastAPI bridge between engine and frontend. **Internal Affairs** is the SvelteKit frontend players actually see.
 
-Satori, LLM Client, and Anamnesis are fully built. Internal Affairs is scaffolded but empty. The game works like this: a case file describes a patient as a graph of nodes (clues, test results, treatments, crises). Anamnesis generates those files by prompting an LLM, validating the output at Boundary 1 (the freeze line), and saving only valid cases. The engine loads that graph, and as the player takes actions (ask questions, order labs, prescribe treatment), nodes activate and reveal based on flags and timers. Time passes, vitals change, and the patient gets better or worse depending on what the player does.
+Phase 1 is complete: all five packages are built, one reference case (Maria Santos / neurocysticercosis) plays end-to-end, and the four architectural boundaries hold. Phase 2 (Gameplay Surface + Narrative Voice, target release `v0.7`) is in planning — see [system-design.md](architecture/system-design.md) and [phase-2-ho-overview.md](architecture/phase-2-ho-overview.md). The game works like this: a case file describes a patient as a graph of nodes (clues, test results, treatments, crises). Anamnesis generates those files by prompting an LLM, validating the output at Boundary 1 (the freeze line), and saving only valid cases. The engine loads that graph, and as the player takes actions (ask questions, order labs, prescribe treatment), nodes activate and reveal based on flags and timers. Time passes, vitals change, and the patient gets better or worse depending on what the player does.
 
 ---
 
@@ -31,20 +31,26 @@ satori-internal-affairs/
 │   ├── project-map.md                        ← you are here
 │   ├── satori-internal-affairs-seed.md
 │   ├── architecture/
+│   │   ├── system-design.md                            ← canonical K2 reference (Phase 1 + Phase 2)
+│   │   ├── phase-2-ho-overview.md                      ← K4 build sequence for Phase 2
 │   │   ├── case-data-structure.md
 │   │   ├── example-case-node-validation.md
 │   │   ├── future-features.md
-│   │   ├── satori-engine-api.md                       ← public API reference (Ho 05)
+│   │   ├── game-design-pitch.md
+│   │   ├── satori-engine-api.md                        ← public API reference (Ho 05)
 │   │   ├── P1-H03-plan.md
 │   │   ├── P1-H03-llm-abstraction-layer.md
 │   │   ├── P1-H04-case-generation-pipeline.md
-│   │   └── phase-1-gameplan.md
+│   │   └── phase-1-gameplan.md                         ← historical Phase 1 plan
 │   └── devlog/
 │       ├── P1-H00-devlog-notes.md
 │       ├── P1-H01-devlog-schema-review.md
 │       ├── P1-H02-devlog-engine-core.md
 │       ├── P1-H03-devlog-llm-abstraction-layer.md
-│       └── P1-H04-devlog-case-generation-pipeline.md
+│       ├── P1-H04-devlog-case-generation-pipeline.md
+│       ├── P1-H05-devlog-minimal-playable-frontend.md
+│       ├── P1-H06-devlog-vertical-slice.md
+│       └── P2-gameplay-seed.md
 ├── tasks/
 │   ├── README.md
 │   ├── P1-H00-DONE-agent-task-project-scaffolding.md
@@ -53,7 +59,8 @@ satori-internal-affairs/
 │   ├── P1-H03-DONE-agent-task-llm-abstraction-layer.md
 │   ├── P1-H03.2-DONE-agent-task-improve-tests.md
 │   ├── P1-H04-DONE-agent-task-case-generation-pipeline.md
-│   └── P1-H05-DONE-agent-task-minimal-playable-frontend.md
+│   ├── P1-H05-DONE-agent-task-minimal-playable-frontend.md
+│   └── P1-H06-DONE-agent-task-vertical-slice.md
 └── packages/
     ├── satori/
     │   ├── pyproject.toml
@@ -215,20 +222,26 @@ All design thinking, architecture decisions, and session logs live here.
 
 - **`satori-internal-affairs-seed.md`** — The original vision document — target audience, design goals, four-layer architecture, system boundary definitions.
 - **`architecture/`**
+  - **`system-design.md`** — Canonical Kamae 2 reference: current architectural commitments. Phase 1 reality + Phase 2 commitments (mission-control dashboard, diegetic vs non-diegetic timer split, emergency mode, wait action, diagnosis-as-treatment scoring, live LLM narrator). Supersedes `phase-1-gameplan.md` as the architectural source of truth.
+  - **`phase-2-ho-overview.md`** — Kamae 4 build sequence for Phase 2 (release `v0.7`). Single phase, eight hos (P2-H01–P2-H08), inline deferred decisions resolved by the ho that needs them.
   - **`case-data-structure.md`** — Deep dive into the node-graph architecture with a garden metaphor; walks through the Maria Santos case node by node.
   - **`example-case-node-validation.md`** — Pre-schema plain-language description of all 12 Maria Santos nodes; used to validate the architecture before writing JSON.
   - **`future-features.md`** — Deferred feature register (LLM narration, natural language input, case builder GUI, emotional nodes, Mode 3 full prompt injection, F-008 session management evolution) with Phase 1 compatibility notes.
+  - **`game-design-pitch.md`** — Public-facing design overview: core mechanics, hidden-timer / visible-action-economy split, mission-control dashboard concept, outcome scoring. Source material for the Phase 2 commitments lifted into `system-design.md`.
   - **`satori-engine-api.md`** — Authoritative public API reference for the satori and llm-client packages: SatoriEngine methods, GameState fields, all 12 event types, PatientCondition, parse_action, Narrator/NarrationEvent/NarrationContext, ModelConfig factories. Written in Ho 05 to support satori-api development.
   - **`P1-H03-plan.md`** — Pre-build design spec for Ho 03 (LLM abstraction layer): file inventory, boundary types, interface contracts, provider implementations.
   - **`P1-H03-llm-abstraction-layer.md`** — Learning document explaining how llm-client works: interfaces, boundary types, factory pattern, how OpenAI/Anthropic calls work, optional dependencies, mock providers.
   - **`P1-H04-case-generation-pipeline.md`** — Learning document explaining how Anamnesis works: seeds, two-phase validation, `GenerationResult` design, retry loop, Boundary 1 enforcement.
-  - **`phase-1-gameplan.md`** — Phase 1 plan: vertical slice goal, milestone dependency graph, detailed specs for each milestone (schema → engine → LLM → frontend).
+  - **`phase-1-gameplan.md`** — Historical Phase 1 plan: vertical slice goal, milestone dependency graph, ho-by-ho specs. Preserved as record; superseded by `system-design.md`.
 - **`devlog/`**
   - **`P1-H00-devlog-notes.md`** — Raw design thinking — how to model conditional reveal, branching trajectories, and outcome evaluation in a frozen data structure.
   - **`P1-H01-devlog-schema-review.md`** — Post-implementation review of the schema task; documents 3 bugs fixed and 3 design observations accepted.
   - **`P1-H02-devlog-engine-core.md`** — Post-implementation review of the engine task; documents the 20/33 → 33/33 test journey and StateCheckers refactoring.
   - **`P1-H03-devlog-llm-abstraction-layer.md`** — Post-implementation review of Ho 03; documents architecture decisions, boundary type ownership, optional dependency strategy.
   - **`P1-H04-devlog-case-generation-pipeline.md`** — Post-implementation review of Ho 04; documents CreativeSeed design, two-phase validation, retry strategy, GenerationResult pattern, Boundary 1 enforcement, 105-test coverage.
+  - **`P1-H05-devlog-minimal-playable-frontend.md`** — Post-implementation review of Ho 05; documents the FastAPI bridge, in-memory session strategy, server-side MockNarrator, SvelteKit UI architecture.
+  - **`P1-H06-devlog-vertical-slice.md`** — Post-implementation review of Ho 06; documents `get_playable_actions()` algorithm, action grammar gap closure, ActionMenu grouping fix, boundary checklist, Phase 2 extensibility audit.
+  - **`P2-gameplay-seed.md`** — Phase 2 design homework: gameplay mechanics seed, design axes (A/B/C), reference games, six concrete design questions. Source material for Phase 2 system design.
 
 ## tasks/
 
@@ -242,6 +255,7 @@ Agent task specifications. Each one defines a unit of work with goals, acceptanc
 - **`P1-H03.2-DONE-agent-task-improve-tests.md`** — Test coverage improvements for Ho 03: factories, schema conformance, error handling, boundary types.
 - **`P1-H04-DONE-agent-task-case-generation-pipeline.md`** — Case generation pipeline: CreativeSeed, two-phase validation, retry/repair loop, GenerationResult, Boundary 1 enforcement, 105 tests.
 - **`P1-H05-DONE-agent-task-minimal-playable-frontend.md`** — Minimal playable frontend: FastAPI bridge (satori-api), SvelteKit UI (Internal Affairs), in-memory sessions with stateless-shaped responses, server-side MockNarrator.
+- **`P1-H06-DONE-agent-task-vertical-slice.md`** — Vertical slice integration: `get_playable_actions()` on the engine, `playable_actions` field on API responses, ActionMenu grouping fix, boundary verification checklist.
 
 ## packages/satori/
 

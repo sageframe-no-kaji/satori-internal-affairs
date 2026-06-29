@@ -137,16 +137,19 @@ make dev-frontend       # SvelteKit dev server
 
 ## Current Status
 
-**Phase 1 — Architectural Foundation**
+**Phase 1 — Architectural Foundation: complete.** The four boundaries are real and enforced. The Satori engine runs cases deterministically. Anamnesis generates and validates cases through a real LLM. The vertical slice — one playable case end-to-end across all four packages — is in place. One reference case (Maria Santos / neurocysticercosis) plays from intake to outcome.
 
-Monorepo structure is established. System boundaries are defined. Currently building: the JSON Schema that serves as the contract between Anamnesis and Satori, followed by the deterministic engine core.
+**Phase 2 — Gameplay Surface + Narrative Voice: in planning.** Surfacing what the engine already simulates: a mission-control dashboard, visible diegetic timers, emergency mode rendering, a first-class wait/observe action, diagnostic-rigor scoring, and a live LLM narrator in the *Grey's Anatomy* register. Ships as `v0.7`.
 
-See [Phase 1 Gameplan](docs/architecture/phase-1-gameplan.md) for the full roadmap.
+See the [System Design](docs/architecture/system-design.md) for current architectural commitments and the [Phase 2 Ho Overview](docs/architecture/phase-2-ho-overview.md) for the build sequence.
 
 ## Documentation
 
 - [Seed Document](docs/satori-internal-affairs-seed.md) — the original architectural vision and design rationale
-- [Phase 1 Gameplan](docs/architecture/phase-1-gameplan.md) — milestone breakdown and dependency map
+- [System Design](docs/architecture/system-design.md) — canonical architectural reference (Phase 1 reality + Phase 2 commitments)
+- [Phase 2 Ho Overview](docs/architecture/phase-2-ho-overview.md) — current build sequence
+- [Game Design Pitch](docs/architecture/game-design-pitch.md) — public-facing design overview
+- [Phase 1 Gameplan](docs/architecture/phase-1-gameplan.md) — historical record of the Phase 1 plan
 
 ## License
 
