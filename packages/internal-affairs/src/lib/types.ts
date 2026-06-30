@@ -38,6 +38,22 @@ export interface PatientContext {
 }
 
 // ---------------------------------------------------------------------------
+// Diegetic timers
+// ---------------------------------------------------------------------------
+
+/**
+ * A diegetic timer the player's character is aware of.
+ * Derived from pending_reveals (ordered labs/imaging) and active nodes
+ * whose timer has diegetic=true. Mirrors VisibleTimerResponse from the API.
+ */
+export interface VisibleTimer {
+  label: string;
+  remaining_minutes: number;
+  source: 'pending_reveal' | 'active_timer';
+  node_id: string;
+}
+
+// ---------------------------------------------------------------------------
 // Game state
 // ---------------------------------------------------------------------------
 
@@ -53,6 +69,7 @@ export interface GameState {
   timer_stages: Record<string, number>;
   current_vitals: VitalSigns;
   available_actions: string[];
+  visible_timers: VisibleTimer[];
   case_ended: boolean;
   outcome_tier: string | null;
   end_reason: string | null;

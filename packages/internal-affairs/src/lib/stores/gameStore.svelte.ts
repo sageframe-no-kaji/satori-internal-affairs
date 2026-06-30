@@ -19,6 +19,7 @@ import type {
   GameState,
   PatientCondition,
   PatientContext,
+  VisibleTimer,
 } from '$lib/types';
 
 // ---------------------------------------------------------------------------
@@ -135,6 +136,11 @@ function createGameStore() {
     get view() { return view; },
     get isLoading() { return isLoading; },
     get error() { return error; },
+
+    /** Diegetic timers from the latest game state. Empty array when no session. */
+    get visibleTimers(): VisibleTimer[] {
+      return gameState?.visible_timers ?? [];
+    },
 
     startSession,
     performAction,

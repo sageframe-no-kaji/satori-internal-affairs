@@ -68,7 +68,7 @@
     <div class="dashboard-body">
       <ActiveConcernsPanel findings={[]} />
       <NarrativeFeedPanel events={game.eventLog} />
-      <PendingResultsPanel timers={[]} />
+      <PendingResultsPanel timers={game.visibleTimers} />
     </div>
 
     <!-- Row 4: action bar -->
