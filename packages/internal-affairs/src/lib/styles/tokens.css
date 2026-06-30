@@ -1,0 +1,76 @@
+/*
+  Design tokens — Satori Internal Affairs
+  All components read from these custom properties.
+  No hex codes or magic-number px values in component styles.
+
+  To adjust the visual design, change values here.
+  One-file change, everywhere updates.
+*/
+
+:root {
+  /* Colors — clinical hospital palette, restrained */
+  --color-bg-app:        #0e1218;   /* page background, near-black */
+  --color-bg-panel:      #161b24;   /* panel background */
+  --color-bg-panel-alt:  #1c2230;   /* alternating row / hover */
+  --color-border:        #2a3142;   /* default panel border */
+  --color-border-strong: #3d4458;   /* emphasised border */
+
+  --color-text:          #e8ecf2;   /* default text */
+  --color-text-muted:    #a0a8b8;   /* secondary text */
+  --color-text-dim:      #6b7280;   /* tertiary / placeholder */
+
+  /* State colors — used sparingly, only when something IS in that state */
+  --color-state-normal:   #5ec585;   /* green — vitals in range */
+  --color-state-warning:  #e0a83a;   /* amber — vitals trending */
+  --color-state-critical: #d65555;   /* red — vitals out of range, emergencies */
+  --color-state-info:     #6ba3d6;   /* blue — neutral state info */
+
+  /* Accent — interactive elements */
+  --color-accent:         #7ab0ff;   /* default interactive */
+  --color-accent-hover:   #a6c8ff;
+  --color-accent-active:  #c5dbff;
+
+  /* Spacing — generous defaults for Universal Design */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+
+  /* Typography — large base for readability */
+  --font-size-sm:   16px;
+  --font-size-base: 18px;
+  --font-size-lg:   22px;
+  --font-size-xl:   28px;
+  --font-size-2xl:  36px;
+  --line-height:    1.55;
+  --font-stack:     'Inter', system-ui, -apple-system, sans-serif;
+
+  /* Interactive sizing — Universal Design floor */
+  --touch-target-min:    60px;   /* minimum hit-target size (well above 44px WCAG floor) */
+  --touch-target-pref:   72px;   /* preferred button height */
+  --touch-target-gap:    var(--space-4);   /* minimum spacing between hit targets */
+
+  /* Overlay and error backgrounds */
+  --color-overlay-bg:         rgba(14, 18, 24, 0.85);  /* modal backdrop */
+  --color-error-bg:           #3a1010;
+  --color-error-border:       #5a1a1a;
+
+  /* Condition badge backgrounds — dark tints behind state colours */
+  --color-badge-bg-normal:    #1a3a2a;
+  --color-badge-bg-warning:   #2d3312;
+  --color-badge-bg-decomp:    #3a2810;
+  --color-badge-bg-critical:  #3a1010;
+  --color-badge-bg-dead:      #282828;
+  --color-badge-bg-recovered: #0d2d3a;
+
+  /* Layout */
+  --radius-sm: 4px;
+  --radius:    8px;
+  --radius-lg: 12px;
+  --shadow-panel: 0 2px 8px rgba(0, 0, 0, 0.25);
+  --border-width: 1px;
+}
