@@ -82,10 +82,22 @@
       {/each}
     {/if}
 
+    <!-- Wait / Observe — always visible, sibling to clinical-action categories -->
+    <CategoryDropdown
+      categoryLabel="Wait / Observe"
+      actions={[
+        { key: 'wait:15', label: '15 minutes' },
+        { key: 'wait:30', label: '30 minutes' },
+        { key: 'wait:60', label: '60 minutes' },
+      ]}
+      disabled={loading || false}
+      disabledReason={loading ? 'Processing previous action…' : 'Emergency in progress'}
+      {onAction}
+    />
     <!--
-      TODO H06: add Wait/Observe CategoryDropdown here.
-      It will use the built-in 'wait' base action with subcategories
-      wait:15, wait:30, wait:60 (durations in minutes).
+      TODO(P2-H05): wire disabled to state.emergency_active when emergency mode lands.
+      Currently disabled={loading || false} — the `false` slot is reserved for
+      the emergency_active flag that P2-H05 will add to the game store.
     -->
   </div>
 

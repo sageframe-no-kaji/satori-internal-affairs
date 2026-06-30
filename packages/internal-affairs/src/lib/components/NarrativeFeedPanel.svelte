@@ -46,6 +46,21 @@
     const background = new Set(['flag_set', 'flag_cleared', 'action_unlocked', 'action_locked']);
     return !background.has(type);
   }
+
+  /**
+   * Resolve the display text for an event. For Waited events the server
+   * narration bridge does not yet produce a player-facing string (P2-H08
+   * will bring a real narrator). Render directly from event data instead.
+   *
+   * For all other event types, fall through to the server-supplied narration.
+   */
+  function narrateEvent(event: import('$lib/types').GameEvent, serverNarration: string): string {
+    if (event.type === 'waited') {
+      const dur = event.data['duration_minutes'];
+      return typeof dur === 'number' ? `${dur} minutes pass.` : 'Time passes.';
+    }
+    return serverNarration;
+  }
 </script>
 
 <section class="panel narrative-feed-panel" aria-label="Narrative Feed">
@@ -66,7 +81,7 @@
 
           {#each entry.events as event, i}
             {#if isSignificant(event.type)}
-              <p class="narration-text">{entry.narrations[i]}</p>
+              <p class="narration-text">{narrateEvent(event, entry.narrations[i])}</p>
             {/if}
           {/each}
 
