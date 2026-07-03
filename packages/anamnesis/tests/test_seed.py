@@ -183,8 +183,7 @@ class TestLoadSeedFile:
         """ValueError for a patient_age_range that isn't a two-element list."""
         p = tmp_path / "bad_age.yaml"
         p.write_text(
-            "diagnosis: x\ndifficulty: beginner\ndramatic_tone: clinical\n"
-            "patient_age_range: 30\n"
+            "diagnosis: x\ndifficulty: beginner\ndramatic_tone: clinical\npatient_age_range: 30\n"
         )
         with pytest.raises(ValueError, match="patient_age_range"):
             load_seed_file(p)
@@ -210,8 +209,7 @@ class TestLoadSeedFile:
         """_opt_str returns None when the value is blank/whitespace."""
         p = tmp_path / "blank.yaml"
         p.write_text(
-            "diagnosis: x\ndifficulty: beginner\ndramatic_tone: clinical\n"
-            "setting: '   '\n"
+            "diagnosis: x\ndifficulty: beginner\ndramatic_tone: clinical\nsetting: '   '\n"
         )
         seed = load_seed_file(p)
         assert seed.setting is None

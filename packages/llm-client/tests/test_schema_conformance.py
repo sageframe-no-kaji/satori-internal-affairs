@@ -49,7 +49,9 @@ def test_mock_case_conforms_to_schema(mock_generator, sample_seed, schema_dict):
         validate(instance=case, schema=schema_dict)
     except ValidationError as e:
         # Log the error for awareness but don't fail - example case may be WIP
-        pytest.skip(f"Mock case has schema validation issues (example case may be WIP): {e.message}")
+        pytest.skip(
+            f"Mock case has schema validation issues (example case may be WIP): {e.message}"
+        )
 
 
 def test_mock_case_has_required_top_level_keys(mock_generator, sample_seed):

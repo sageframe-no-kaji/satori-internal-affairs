@@ -145,8 +145,7 @@ def _build_seed(args: argparse.Namespace) -> CreativeSeed:
 
     if not args.diagnosis:
         raise ValueError(
-            "Either --seed-file or --diagnosis is required.\n"
-            "Run with --help for usage."
+            "Either --seed-file or --diagnosis is required.\nRun with --help for usage."
         )
     return CreativeSeed(
         diagnosis=args.diagnosis,

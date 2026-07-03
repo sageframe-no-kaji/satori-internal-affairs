@@ -80,9 +80,7 @@ def test_mock_narrator_narrate_includes_event_info(mock_config):
     result = narrator.narrate(event, context)
     # Should include event type, description, or patient name
     assert (
-        "coughing" in result.lower()
-        or "observation" in result.lower()
-        or "test" in result.lower()
+        "coughing" in result.lower() or "observation" in result.lower() or "test" in result.lower()
     )
 
 

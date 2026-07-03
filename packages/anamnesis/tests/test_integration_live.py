@@ -66,9 +66,7 @@ def rich_seed() -> CreativeSeed:
 class TestOpenAIIntegration:
     """Live integration tests against OpenAI."""
 
-    def test_openai_generates_valid_case(
-        self, simple_seed: CreativeSeed, tmp_path: Path
-    ) -> None:
+    def test_openai_generates_valid_case(self, simple_seed: CreativeSeed, tmp_path: Path) -> None:
         """OpenAI pipeline generates a case that passes CaseDefinition validation."""
         config = ModelConfig(
             provider=Provider.OPENAI,
@@ -83,9 +81,7 @@ class TestOpenAIIntegration:
         assert result.case is not None
         assert isinstance(result.case, CaseDefinition)
 
-    def test_openai_case_has_sufficient_nodes(
-        self, simple_seed: CreativeSeed
-    ) -> None:
+    def test_openai_case_has_sufficient_nodes(self, simple_seed: CreativeSeed) -> None:
         """Generated case has at least 3 nodes (not trivially minimal)."""
         config = ModelConfig(
             provider=Provider.OPENAI,
@@ -98,13 +94,9 @@ class TestOpenAIIntegration:
 
         assert result.success, f"Generation failed: {result.errors}"
         assert result.case is not None
-        assert len(result.case.nodes) >= 3, (
-            f"Expected >= 3 nodes, got {len(result.case.nodes)}"
-        )
+        assert len(result.case.nodes) >= 3, f"Expected >= 3 nodes, got {len(result.case.nodes)}"
 
-    def test_openai_generated_case_loads_in_engine(
-        self, simple_seed: CreativeSeed
-    ) -> None:
+    def test_openai_generated_case_loads_in_engine(self, simple_seed: CreativeSeed) -> None:
         """Generated case loads in SatoriEngine without CaseValidationError."""
         from satori.engine import SatoriEngine  # only in integration tests
 
@@ -123,9 +115,7 @@ class TestOpenAIIntegration:
         engine = SatoriEngine(result.case)
         assert engine is not None
 
-    def test_openai_save_and_reload(
-        self, simple_seed: CreativeSeed, tmp_path: Path
-    ) -> None:
+    def test_openai_save_and_reload(self, simple_seed: CreativeSeed, tmp_path: Path) -> None:
         """Saved OpenAI-generated case can be reloaded and validated."""
         config = ModelConfig(
             provider=Provider.OPENAI,
@@ -168,9 +158,7 @@ class TestAnthropicIntegration:
         assert result.case is not None
         assert isinstance(result.case, CaseDefinition)
 
-    def test_anthropic_case_has_sufficient_nodes(
-        self, simple_seed: CreativeSeed
-    ) -> None:
+    def test_anthropic_case_has_sufficient_nodes(self, simple_seed: CreativeSeed) -> None:
         """Generated case has at least 3 nodes."""
         config = ModelConfig(
             provider=Provider.ANTHROPIC,
@@ -185,9 +173,7 @@ class TestAnthropicIntegration:
         assert result.case is not None
         assert len(result.case.nodes) >= 3
 
-    def test_anthropic_generated_case_loads_in_engine(
-        self, simple_seed: CreativeSeed
-    ) -> None:
+    def test_anthropic_generated_case_loads_in_engine(self, simple_seed: CreativeSeed) -> None:
         """Generated case loads in SatoriEngine without CaseValidationError."""
         from satori.engine import SatoriEngine  # only in integration tests
 

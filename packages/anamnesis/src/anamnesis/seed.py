@@ -111,9 +111,7 @@ def load_seed_file(path: Path) -> CreativeSeed:
     # Validate required fields
     missing = [field for field in ("diagnosis", "difficulty", "dramatic_tone") if field not in data]
     if missing:
-        raise ValueError(
-            f"Seed file {path} is missing required fields: {', '.join(missing)}"
-        )
+        raise ValueError(f"Seed file {path} is missing required fields: {', '.join(missing)}")
 
     # Validate types of required fields
     for field in ("diagnosis", "difficulty", "dramatic_tone"):

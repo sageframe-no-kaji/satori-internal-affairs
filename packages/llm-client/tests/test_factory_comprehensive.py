@@ -75,9 +75,7 @@ def test_create_action_interpreter_anthropic_not_implemented():
         api_key="sk-ant-test-key",
     )
 
-    with pytest.raises(
-        LLMClientError, match="No live ActionInterpreter implementation.*anthropic"
-    ):
+    with pytest.raises(LLMClientError, match="No live ActionInterpreter implementation.*anthropic"):
         create_action_interpreter(config)
 
 

@@ -53,8 +53,7 @@ def test_openai_missing_package_or_schema_error(openai_config):
     except LLMProviderError as e:
         # Should be one of: package not installed OR schema file not found
         error_msg = str(e).lower()
-        assert ("openai package not installed" in error_msg or
-                "schema file not found" in error_msg)
+        assert "openai package not installed" in error_msg or "schema file not found" in error_msg
 
 
 def test_anthropic_missing_package_or_schema_error(anthropic_config):
@@ -64,8 +63,9 @@ def test_anthropic_missing_package_or_schema_error(anthropic_config):
         assert generator.__class__.__name__ == "AnthropicCaseGenerator"
     except LLMProviderError as e:
         error_msg = str(e).lower()
-        assert ("anthropic package not installed" in error_msg or
-                "schema file not found" in error_msg)
+        assert (
+            "anthropic package not installed" in error_msg or "schema file not found" in error_msg
+        )
 
 
 def test_missing_api_key_for_openai_generator():
@@ -140,4 +140,3 @@ def test_response_error_is_subclass_of_client_error():
     from llm_client import LLMClientError, LLMResponseError
 
     assert issubclass(LLMResponseError, LLMClientError)
-

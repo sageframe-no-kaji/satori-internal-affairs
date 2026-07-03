@@ -21,8 +21,7 @@ class TestBuildCreativePrompt:
         assert rich_seed.dramatic_hook[:20] in prompt
         assert "Red herrings" in prompt or "red herring" in prompt.lower()
         assert "character" in prompt.lower() or (
-            rich_seed.character_notes is not None
-            and rich_seed.character_notes[:20] in prompt
+            rich_seed.character_notes is not None and rich_seed.character_notes[:20] in prompt
         )
         assert rich_seed.emotional_core is not None
         assert rich_seed.emotional_core[:20] in prompt

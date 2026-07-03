@@ -115,9 +115,7 @@ class TestRepairAttempt:
         assert result.attempts == max_retries + 1
         assert gen.call_count == max_retries + 1
 
-    def test_repair_attempt_counted_in_attempts(
-        self, minimal_seed: CreativeSeed
-    ) -> None:
+    def test_repair_attempt_counted_in_attempts(self, minimal_seed: CreativeSeed) -> None:
         """When repair also fails, attempts reflects all calls including repair."""
         max_retries = 2
         gen = _CountingGenerator([{}])  # always returns invalid
@@ -154,9 +152,7 @@ class TestAllAttemptsFail:
         result = pipeline.generate(minimal_seed, max_retries=1)
         assert result.raw_dict is not None
 
-    def test_failure_result_attempts_equals_max_plus_one(
-        self, minimal_seed: CreativeSeed
-    ) -> None:
+    def test_failure_result_attempts_equals_max_plus_one(self, minimal_seed: CreativeSeed) -> None:
         """Failure result: attempts == max_retries + 1 (repair included)."""
         gen = _CountingGenerator([{}])
         pipeline = _pipeline_with_generator(gen)
@@ -180,9 +176,7 @@ class TestCustomMaxRetries:
         # so repair runs immediately. Repair returns valid_dict → success.
         assert result.success is True
 
-    def test_max_retries_one(
-        self, minimal_seed: CreativeSeed, valid_dict: dict[str, Any]
-    ) -> None:
+    def test_max_retries_one(self, minimal_seed: CreativeSeed, valid_dict: dict[str, Any]) -> None:
         """max_retries=1: one simple retry + one repair."""
         gen = _CountingGenerator([{}, valid_dict])
         pipeline = _pipeline_with_generator(gen)

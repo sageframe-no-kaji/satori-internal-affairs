@@ -89,8 +89,8 @@ def _check_structural(case: CaseDefinition) -> list[str]:
                 if stages[i].at_minutes <= stages[i - 1].at_minutes:
                     errors.append(
                         f"[structural] Node '{node.id}' timer stages not sorted "
-                        f"ascending by at_minutes: stage[{i-1}].at_minutes="
-                        f"{stages[i-1].at_minutes} >= stage[{i}].at_minutes="
+                        f"ascending by at_minutes: stage[{i - 1}].at_minutes="
+                        f"{stages[i - 1].at_minutes} >= stage[{i}].at_minutes="
                         f"{stages[i].at_minutes}"
                     )
 
