@@ -111,7 +111,7 @@
       {
         "type": "red_herring",
         "description": "Steroids give 60 minutes of false improvement. Maria smiles. Her headache fades. Then the crisis arrives 60 minutes early.",
-        "structural_role": "node_15_steroid_response accelerates node_09_headache_progression timer by 60 minutes on expire"
+        "structural_role": "node_19_steroid_rebound (activated only when steroids are given) accelerates node_09_headache_progression timer by 60 minutes on expire"
       },
       {
         "type": "misleading_assumption",
@@ -677,10 +677,6 @@
           },
           {
             "type": "set_flag",
-            "target": "cysticercosis_confirmed"
-          },
-          {
-            "type": "set_flag",
             "target": "neurocysticercosis_suspected"
           },
           {
@@ -733,10 +729,6 @@
           {
             "type": "set_flag",
             "target": "diagnosis_confirmed"
-          },
-          {
-            "type": "set_flag",
-            "target": "cysticercosis_confirmed"
           },
           {
             "type": "unlock_action",
@@ -810,10 +802,6 @@
           {
             "type": "set_flag",
             "target": "diagnosis_confirmed"
-          },
-          {
-            "type": "set_flag",
-            "target": "cysticercosis_confirmed"
           },
           {
             "type": "unlock_action",
@@ -960,20 +948,6 @@
       "reveal": {
         "action": "start_treatment",
         "subcategory": "steroids"
-      },
-      "timer": {
-        "duration_minutes": 60,
-        "on_expire": [
-          {
-            "type": "set_flag",
-            "target": "steroid_rebound"
-          },
-          {
-            "type": "modify_timer",
-            "target": "node_09_headache_progression",
-            "value": -60
-          }
-        ]
       },
       "vital_signs": {
         "heart_rate": 82,
@@ -1148,6 +1122,41 @@
       },
       "reveal": null,
       "teaching_note": "Eosinophilia plus ring-enhancing lesion is suspicion-grade evidence for neurocysticercosis. Committing to albendazole at this point is clinically defensible — the Good tier. Waiting for MRI scolex sign or serology is cautious and earns Optimal."
+    },
+    {
+      "id": "node_19_steroid_rebound",
+      "type": "progression",
+      "content": {
+        "narrative_text": "Beneath the apparent improvement, the dexamethasone has suppressed the immune response that was holding the parasites in check. The inflammation quiets. The cysticerci flourish. The progression accelerates, unseen."
+      },
+      "activation": {
+        "paths": [
+          {
+            "conditions": [
+              {
+                "type": "flag_set",
+                "target": "wrong_treatment_steroids"
+              }
+            ]
+          }
+        ]
+      },
+      "reveal": null,
+      "timer": {
+        "duration_minutes": 60,
+        "on_expire": [
+          {
+            "type": "modify_timer",
+            "target": "node_09_headache_progression",
+            "value": -60
+          }
+        ]
+      },
+      "outcome_weight": {
+        "category": "medical",
+        "impact": "critical"
+      },
+      "teaching_note": "The steroid rebound. Sixty minutes after dexamethasone is given, immune suppression accelerates the progression timeline by 60 minutes — the false improvement window is exactly the rebound delay. Activates only when steroids are actually administered."
     }
   ],
   "outcome_evaluation": {

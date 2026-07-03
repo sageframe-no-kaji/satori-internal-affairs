@@ -52,13 +52,14 @@ def engine(maria_santos_case: CaseDefinition) -> SatoriEngine:
 class TestInitialization:
     """Acceptance checks 1-5: engine initialization."""
 
-    def test_case_loads_and_has_19_nodes(self, engine: SatoriEngine, maria_santos_case: CaseDefinition):
+    def test_case_loads_and_has_20_nodes(self, engine: SatoriEngine, maria_santos_case: CaseDefinition):
         """Check 1: Load Maria Santos case and verify node map.
 
-        19 nodes after P2-H07 added node_18_empirical_unlock (was 18).
+        20 nodes after the audit S2 case repair added node_19_steroid_rebound
+        (P2-H07 had added node_18_empirical_unlock for 19).
         """
         assert engine.case == maria_santos_case
-        assert len(engine.case.nodes) == 19
+        assert len(engine.case.nodes) == 20
 
     def test_starts_active_nodes_are_active_at_init(self, engine: SatoriEngine):
         """Check 2: Nodes with starts_active=True are in active_nodes."""
