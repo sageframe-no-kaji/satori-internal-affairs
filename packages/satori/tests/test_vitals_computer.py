@@ -220,16 +220,17 @@ class TestEdgeCases:
         assert result.o2_saturation == 97
 
     def test_empty_values_returns_none(self, vc: VitalsComputer):
-        """_worst_value with empty list returns None."""
-        assert vc._worst_value("heart_rate", []) is None
+        """_worst_int with empty list returns None."""
+        assert vc._worst_int("heart_rate", []) is None
+        assert vc._worst_float("temperature", []) is None
 
     def test_int_vital_returns_int(self, vc: VitalsComputer):
         """Integer vitals should return int, not float."""
-        result = vc._worst_value("heart_rate", [80.0, 120.0])
+        result = vc._worst_int("heart_rate", [80.0, 120.0])
         assert isinstance(result, int)
         assert result == 120
 
     def test_float_vital_returns_float(self, vc: VitalsComputer):
         """Temperature should return float."""
-        result = vc._worst_value("temperature", [98.6, 102.0])
+        result = vc._worst_float("temperature", [98.6, 102.0])
         assert isinstance(result, float)

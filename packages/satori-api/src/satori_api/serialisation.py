@@ -40,15 +40,15 @@ def resolve_tier_narrative(case: CaseDefinition, outcome_tier: str | None) -> st
     return None
 
 
-def vitals_to_response(vitals: object) -> VitalSignsResponse:  # type: ignore[type-arg]
+def vitals_to_response(vitals: object) -> VitalSignsResponse:
     """Convert a VitalSigns Pydantic model to a VitalSignsResponse."""
     return VitalSignsResponse(
-        heart_rate=getattr(vitals, "heart_rate", None),  # type: ignore[arg-type]
-        blood_pressure_systolic=getattr(vitals, "blood_pressure_systolic", None),  # type: ignore[arg-type]
-        blood_pressure_diastolic=getattr(vitals, "blood_pressure_diastolic", None),  # type: ignore[arg-type]
-        temperature=getattr(vitals, "temperature", None),  # type: ignore[arg-type]
-        respiratory_rate=getattr(vitals, "respiratory_rate", None),  # type: ignore[arg-type]
-        o2_saturation=getattr(vitals, "o2_saturation", None),  # type: ignore[arg-type]
+        heart_rate=getattr(vitals, "heart_rate", None),
+        blood_pressure_systolic=getattr(vitals, "blood_pressure_systolic", None),
+        blood_pressure_diastolic=getattr(vitals, "blood_pressure_diastolic", None),
+        temperature=getattr(vitals, "temperature", None),
+        respiratory_rate=getattr(vitals, "respiratory_rate", None),
+        o2_saturation=getattr(vitals, "o2_saturation", None),
     )
 
 

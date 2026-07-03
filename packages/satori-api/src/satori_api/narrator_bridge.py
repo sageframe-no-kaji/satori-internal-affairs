@@ -8,6 +8,8 @@ frontend receives pre-narrated strings, never raw events for text generation.
 
 from __future__ import annotations
 
+from typing import Any
+
 from llm_client import (
     ModelConfig,
     NarrationContext,
@@ -45,7 +47,7 @@ _narrator: Narrator = create_narrator(ModelConfig(provider=Provider.MOCK, model=
 # ---------------------------------------------------------------------------
 
 
-def _describe_event(event: Event) -> tuple[str, dict | None]:  # type: ignore[type-arg]
+def _describe_event(event: Event) -> tuple[str, dict[str, Any] | None]:
     """
     Return a human-readable description and optional structured_data for
     any event type. Used to populate NarrationEvent.

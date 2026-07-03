@@ -151,6 +151,18 @@ class TestConditionTypes:
         )
         assert evaluator._evaluate_condition(cond, base_state) is False
 
+    def test_time_elapsed_none_value_raises(self, evaluator: ConditionEvaluator, base_state: GameState):
+        """A TIME_ELAPSED condition authored without a value fails loud, not with TypeError."""
+        cond = Condition(type=ConditionType.TIME_ELAPSED, target="")
+        with pytest.raises(ValueError, match="TIME_ELAPSED"):
+            evaluator._evaluate_condition(cond, base_state)
+
+    def test_vital_threshold_none_value_raises(self, evaluator: ConditionEvaluator, base_state: GameState):
+        """A VITAL_THRESHOLD condition authored without a value fails loud, not with TypeError."""
+        cond = Condition(type=ConditionType.VITAL_THRESHOLD, target="o2_saturation")
+        with pytest.raises(ValueError, match="VITAL_THRESHOLD"):
+            evaluator._evaluate_condition(cond, base_state)
+
 
 # ---------------------------------------------------------------------------
 # COMPARATOR BRANCHES

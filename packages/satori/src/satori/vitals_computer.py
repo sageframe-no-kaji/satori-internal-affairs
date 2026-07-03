@@ -62,12 +62,12 @@ class VitalsComputer:
 
         # Take worst for each
         return VitalSigns(
-            heart_rate=self._worst_value("heart_rate", hr_values),
-            blood_pressure_systolic=self._worst_value("blood_pressure_systolic", bp_sys_values),
-            blood_pressure_diastolic=self._worst_value("blood_pressure_diastolic", bp_dia_values),
-            temperature=self._worst_value("temperature", temp_values),
-            respiratory_rate=self._worst_value("respiratory_rate", rr_values),
-            o2_saturation=self._worst_value("o2_saturation", o2_values),
+            heart_rate=self._worst_int("heart_rate", hr_values),
+            blood_pressure_systolic=self._worst_int("blood_pressure_systolic", bp_sys_values),
+            blood_pressure_diastolic=self._worst_int("blood_pressure_diastolic", bp_dia_values),
+            temperature=self._worst_float("temperature", temp_values),
+            respiratory_rate=self._worst_int("respiratory_rate", rr_values),
+            o2_saturation=self._worst_int("o2_saturation", o2_values),
         )
 
     def _collect_vital_values(
@@ -116,7 +116,21 @@ class VitalsComputer:
 
         return values
 
-    def _worst_value(self, vital_name: str, values: list[float]) -> int | float | None:
+    def _worst_int(self, vital_name: str, values: list[float]) -> int | None:
+        """Worst value for an integer-valued vital (all vitals except temperature).
+
+        The int/float split lives in the method choice at the call site so the
+        VitalSigns field types are provable, rather than resting on a runtime
+        name-set the type checker can't see.
+        """
+        worst = self._worst_raw(vital_name, values)
+        return None if worst is None else int(worst)
+
+    def _worst_float(self, vital_name: str, values: list[float]) -> float | None:
+        """Worst value for a float-valued vital (temperature)."""
+        return self._worst_raw(vital_name, values)
+
+    def _worst_raw(self, vital_name: str, values: list[float]) -> float | None:
         """Determine worst value for a specific vital.
 
         Strategy per vital:
@@ -134,35 +148,22 @@ class VitalsComputer:
         if not values:
             return None
 
-        # Integer vitals should return int, float vitals return float
-        is_int_vital = vital_name in {
-            "heart_rate",
-            "blood_pressure_systolic",
-            "blood_pressure_diastolic",
-            "respiratory_rate",
-            "o2_saturation",
-        }
-
         match vital_name:
             case "o2_saturation":
                 # Lowest is worst
-                worst = min(values)
+                return min(values)
             case "blood_pressure_systolic" | "blood_pressure_diastolic":
                 # Highest is worst (hypertensive crisis)
-                worst = max(values)
+                return max(values)
             case "heart_rate" | "respiratory_rate" | "temperature":
                 # Furthest from normal midpoint is worst
                 normal_range = self.NORMAL_RANGES.get(vital_name)
                 if normal_range:
                     midpoint = (normal_range[0] + normal_range[1]) / 2
                     # Find value with maximum distance from midpoint
-                    worst = max(values, key=lambda v: abs(v - midpoint))
-                else:
-                    # Fallback if no range defined
-                    worst = max(values)
+                    return max(values, key=lambda v: abs(v - midpoint))
+                # Fallback if no range defined
+                return max(values)
             case _:
                 # Unknown vital - fallback to max
-                worst = max(values)
-
-        # Convert to appropriate type
-        return int(worst) if is_int_vital else worst
+                return max(values)

@@ -5,6 +5,8 @@ Applies all nine EffectType values to game state, emitting appropriate events.
 
 from dataclasses import replace
 
+from pydantic import ValidationError
+
 from satori.events import (
     ActionLockedEvent,
     ActionUnlockedEvent,
@@ -76,6 +78,8 @@ class EffectExecutor:
             case EffectType.DEACTIVATE_NODE:
                 return self._deactivate_node(effect.target, state)
             case EffectType.MODIFY_TIMER:
+                if effect.value is None:
+                    raise ValueError(f"MODIFY_TIMER effect on '{effect.target}' requires an integer value")
                 return self._modify_timer(effect.target, effect.value, state)
             case EffectType.UNLOCK_ACTION:
                 return self._unlock_action(effect.target, state)
@@ -107,7 +111,7 @@ class EffectExecutor:
         new_flags = set(state.flags) | {flag}
         new_state = replace(state, flags=frozenset(new_flags))
 
-        events = [FlagSetEvent(timestamp_minutes=state.current_time_minutes, flag=flag)]
+        events: list[Event] = [FlagSetEvent(timestamp_minutes=state.current_time_minutes, flag=flag)]
 
         return new_state, events
 
@@ -130,7 +134,7 @@ class EffectExecutor:
         new_flags = set(state.flags) - {flag}
         new_state = replace(state, flags=frozenset(new_flags))
 
-        events = [FlagClearedEvent(timestamp_minutes=state.current_time_minutes, flag=flag)]
+        events: list[Event] = [FlagClearedEvent(timestamp_minutes=state.current_time_minutes, flag=flag)]
 
         return new_state, events
 
@@ -176,7 +180,7 @@ class EffectExecutor:
             new_timer_stages[node_id] = 0
             new_state = replace(new_state, timer_stages=new_timer_stages)
 
-        events = [
+        events: list[Event] = [
             NodeActivatedEvent(
                 timestamp_minutes=state.current_time_minutes,
                 node_id=node_id,
@@ -274,7 +278,7 @@ class EffectExecutor:
         new_actions = set(state.available_actions) | {action}
         new_state = replace(state, available_actions=frozenset(new_actions))
 
-        events = [ActionUnlockedEvent(timestamp_minutes=state.current_time_minutes, action=action)]
+        events: list[Event] = [ActionUnlockedEvent(timestamp_minutes=state.current_time_minutes, action=action)]
 
         return new_state, events
 
@@ -297,7 +301,7 @@ class EffectExecutor:
         new_actions = set(state.available_actions) - {action}
         new_state = replace(state, available_actions=frozenset(new_actions))
 
-        events = [ActionLockedEvent(timestamp_minutes=state.current_time_minutes, action=action)]
+        events: list[Event] = [ActionLockedEvent(timestamp_minutes=state.current_time_minutes, action=action)]
 
         return new_state, events
 
@@ -332,7 +336,12 @@ class EffectExecutor:
         if vital_name in current_vitals_dict:
             current_vitals_dict[vital_name] = new_value
 
-        new_vitals = VitalSigns(**current_vitals_dict)
+        try:
+            new_vitals = VitalSigns.model_validate(current_vitals_dict)
+        except ValidationError as exc:
+            # A malformed authored value would otherwise crash mid-simulation
+            # with an opaque Pydantic error; name the offending effect instead.
+            raise ValueError(f"OVERRIDE_VITALS effect on '{vital_name}' has invalid value {new_value!r}") from exc
         new_state = replace(state, current_vitals=new_vitals)
 
         # Vitals change event will be emitted by engine's _recompute_vitals
@@ -361,7 +370,7 @@ class EffectExecutor:
             end_reason=f"Triggered by END_CASE effect: {outcome_tier}",
         )
 
-        events = [
+        events: list[Event] = [
             CaseEndedEvent(
                 timestamp_minutes=state.current_time_minutes,
                 outcome_tier=outcome_tier,

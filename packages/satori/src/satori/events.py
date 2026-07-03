@@ -6,6 +6,7 @@ between the engine and downstream consumers (narration layer, frontend).
 
 from dataclasses import dataclass, field
 from enum import StrEnum
+from typing import Any
 
 
 class EventType(StrEnum):
@@ -61,7 +62,7 @@ class NodeRevealedEvent(Event):
     node_id: str
     node_type: str
     content_text: str  # NodeContent.narrative_text
-    structured_data: dict | None  # NodeContent.structured_data
+    structured_data: dict[str, Any] | None  # NodeContent.structured_data
 
 
 @dataclass(frozen=True)
@@ -104,8 +105,8 @@ class VitalsChangedEvent(Event):
     """Patient vitals changed."""
 
     type: EventType = field(init=False, default=EventType.VITALS_CHANGED)
-    old_vitals: dict  # serialized VitalSigns
-    new_vitals: dict
+    old_vitals: dict[str, Any]  # serialized VitalSigns
+    new_vitals: dict[str, Any]
 
 
 @dataclass(frozen=True)

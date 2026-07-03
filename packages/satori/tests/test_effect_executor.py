@@ -255,6 +255,16 @@ class TestModifyTimer:
         assert new_state is state
         assert events == []
 
+    def test_none_value_raises(self, executor: EffectExecutor):
+        """A MODIFY_TIMER effect authored without a value fails loud, not with TypeError."""
+        from dataclasses import replace
+
+        state = replace(_base_state(), timers={"n1": 100})
+        case = _minimal_case()
+        effect = Effect(type=EffectType.MODIFY_TIMER, target="n1", value=None)
+        with pytest.raises(ValueError, match="requires an integer value"):
+            executor._apply_single_effect(effect, state, case)
+
 
 # ---------------------------------------------------------------------------
 # UNLOCK / LOCK ACTION

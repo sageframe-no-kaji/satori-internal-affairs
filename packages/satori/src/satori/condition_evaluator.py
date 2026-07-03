@@ -107,6 +107,10 @@ class ConditionEvaluator:
             case ConditionType.NODE_EXPIRED:
                 return condition.target in state.expired_nodes
             case ConditionType.TIME_ELAPSED:
+                if condition.value is None:
+                    # A malformed authored condition would otherwise TypeError
+                    # inside the comparison; name the condition instead.
+                    raise ValueError("TIME_ELAPSED condition requires a numeric value")
                 return self._compare(
                     state.current_time_minutes,
                     condition.value,
@@ -154,6 +158,10 @@ class ConditionEvaluator:
         Returns:
             True if the vital threshold condition is satisfied
         """
+        if condition.value is None:
+            # Same guard as TIME_ELAPSED: fail loud on a malformed condition
+            # rather than TypeError inside the comparison.
+            raise ValueError(f"VITAL_THRESHOLD condition on '{condition.target}' requires a numeric value")
         vital_value = getattr(state.current_vitals, condition.target, None)
         if vital_value is None:
             return False
