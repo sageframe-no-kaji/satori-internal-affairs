@@ -12,6 +12,7 @@ from satori.condition_evaluator import ConditionEvaluator
 from satori.effect_executor import EffectExecutor
 from satori.events import (
     CaseEndedEvent,
+    NodeActivatedEvent,
     NodeRevealedEvent,
     PendingRevealStartedEvent,
     VitalsChangedEvent,
@@ -381,6 +382,25 @@ class TestCascadeActivations:
         assert "n1" in new_state.active_nodes
         assert new_state.timers["n1"] == 60
         assert new_state.timer_stages["n1"] == 0
+
+    def test_cascade_activation_emits_node_activated_event(self):
+        """Cascade-activated nodes emit exactly one NodeActivatedEvent —
+        the event contract consumed by narration and the frontend
+        (audit C-6: the event was previously swallowed)."""
+        node = _make_node(
+            "n1",
+            activation=ActivationRule(
+                paths=[ConditionPath(conditions=[Condition(type=ConditionType.FLAG_SET, target="x")])],
+            ),
+        )
+        case = _make_case([node])
+        sc = _build_checkers(case)
+        state = replace(_base_state(), flags=frozenset({"x"}))
+
+        _, events = sc.cascade_activations(state)
+        activated = [e for e in events if isinstance(e, NodeActivatedEvent)]
+        assert len(activated) == 1
+        assert activated[0].node_id == "n1"
 
 
 # ---------------------------------------------------------------------------

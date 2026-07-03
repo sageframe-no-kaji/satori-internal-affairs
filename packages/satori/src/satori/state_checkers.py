@@ -13,6 +13,7 @@ from satori.effect_executor import EffectExecutor
 from satori.events import (
     CaseEndedEvent,
     Event,
+    NodeActivatedEvent,
     NodeRevealedEvent,
     PendingRevealStartedEvent,
     VitalsChangedEvent,
@@ -67,7 +68,9 @@ class StateCheckers:
         new_state = state
         events: list[Event] = []
 
-        for node_id in state.active_nodes:
+        # Sorted: effect/event order must not depend on set iteration order,
+        # which varies with the per-process hash seed (audit C-2).
+        for node_id in sorted(state.active_nodes):
             if node_id in state.revealed_nodes:
                 continue
 
@@ -131,7 +134,9 @@ class StateCheckers:
         # Get action's default delay
         action_default_delay = self.case.action_costs[base_action].result_delay_minutes
 
-        for node_id in state.active_nodes:
+        # Sorted: effect/event order must not depend on set iteration order,
+        # which varies with the per-process hash seed (audit C-2).
+        for node_id in sorted(state.active_nodes):
             if node_id in state.revealed_nodes or node_id in state.pending_reveals:
                 continue
 
@@ -212,7 +217,9 @@ class StateCheckers:
         # The intervention treatment can match either the param or the full action
         match_value = param if param is not None else base_action
 
-        for node_id in state.active_nodes:
+        # Sorted: effect/event order must not depend on set iteration order,
+        # which varies with the per-process hash seed (audit C-2).
+        for node_id in sorted(state.active_nodes):
             node = self.node_map.get(node_id)
             if not node or not node.effects or not node.effects.on_intervene:
                 continue
@@ -283,12 +290,16 @@ class StateCheckers:
                     new_timer_stages[node.id] = 0
                     new_state = replace(new_state, timer_stages=new_timer_stages)
 
-                events.extend(
-                    [
-                        event
-                        for _, evts in [self.effect_exec._activate_node(node.id, new_state, self.case)]
-                        for event in evts
-                    ]
+                # Emit directly: _activate_node early-returns empty once the
+                # node is already in active_nodes, which it is by this point,
+                # so harvesting its events silently dropped every cascade
+                # NodeActivatedEvent (audit C-6).
+                events.append(
+                    NodeActivatedEvent(
+                        timestamp_minutes=new_state.current_time_minutes,
+                        node_id=node.id,
+                        node_type=node.type,
+                    )
                 )
 
                 # Apply on_activate effects
