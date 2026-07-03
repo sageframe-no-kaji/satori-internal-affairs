@@ -8,6 +8,7 @@ frontend receives pre-narrated strings, never raw events for text generation.
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from llm_client import (
@@ -40,6 +41,8 @@ from satori import (
 # ---------------------------------------------------------------------------
 
 _narrator: Narrator = create_narrator(ModelConfig(provider=Provider.MOCK, model="mock"))
+
+_logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
@@ -162,6 +165,10 @@ def narrate_events(events: list[Event], engine: SatoriEngine) -> list[str]:
             description=description,
             structured_data=structured_data,
         )
-        narrations.append(_narrator.narrate(narration_event, context))
+        try:
+            narrations.append(_narrator.narrate(narration_event, context))
+        except Exception:  # noqa: BLE001 — narration is cosmetic (Narration Line): any narrator failure degrades to the plain description; it must never break gameplay
+            _logger.exception("Narrator failed for %s; using fallback description", event.type.value)
+            narrations.append(description)
 
     return narrations

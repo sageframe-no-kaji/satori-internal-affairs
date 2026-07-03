@@ -118,3 +118,55 @@ def test_describe_event_fallback():
     assert isinstance(desc, str)
     assert len(desc) > 0
     assert data is None
+
+
+# ---------------------------------------------------------------------------
+# Narration failure isolation (audit C-5 / S4)
+# ---------------------------------------------------------------------------
+
+
+class _RaisingNarrator:
+    """Stand-in for a live narrator whose provider call fails."""
+
+    def narrate(self, event: object, context: object) -> str:
+        raise RuntimeError("provider timeout")
+
+
+def test_narrator_failure_degrades_to_description(monkeypatch: pytest.MonkeyPatch):
+    """A raising narrator must never propagate: each event degrades to its
+    plain description string (the Narration Line — cosmetic, strippable)."""
+    import satori_api.narrator_bridge as bridge
+
+    monkeypatch.setattr(bridge, "_narrator", _RaisingNarrator())
+    eng, events = _fresh()
+    narrations = narrate_events(list(events), eng)
+
+    assert len(narrations) == len(events)
+    for narration, event in zip(narrations, events, strict=True):
+        expected_description, _ = _describe_event(event)
+        assert narration == expected_description
+
+
+def test_action_endpoint_survives_narrator_failure(monkeypatch: pytest.MonkeyPatch):
+    """Gameplay must return 200 with advanced state even when the narrator
+    raises after the engine has committed the action (audit C-5)."""
+    from fastapi.testclient import TestClient
+
+    import satori_api.narrator_bridge as bridge
+    from satori_api.main import app
+
+    monkeypatch.setattr(bridge, "_narrator", _RaisingNarrator())
+    client = TestClient(app)
+
+    created = client.post("/api/sessions", json={"case_path": EXAMPLE_CASE})
+    assert created.status_code == 201, created.text
+    session_id = created.json()["session_id"]
+
+    response = client.post(
+        f"/api/sessions/{session_id}/actions",
+        json={"action": "history_general"},
+    )
+    assert response.status_code == 200, response.text
+    payload = response.json()
+    assert payload["state"]["current_time_minutes"] > 0
+    assert len(payload["narrations"]) == len(payload["events"])
