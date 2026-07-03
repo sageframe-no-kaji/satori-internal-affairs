@@ -37,11 +37,13 @@ typecheck:
 	mypy packages/satori-api/src
 
 test:
-	@echo "Running pytest on all Python packages..."
-	pytest packages/satori/tests
-	pytest packages/anamnesis/tests
-	pytest packages/llm-client/tests
-	pytest packages/satori-api/tests
+	@echo "Running pytest on all Python packages (coverage floor 90)..."
+	pytest packages/satori/tests --cov=satori --cov-fail-under=90 -q
+	pytest packages/anamnesis/tests --cov=anamnesis --cov-fail-under=90 -q
+	# llm-client exempt from the floor until P2-H08 rewrites the provider
+	# implementations and tests (audit/FABLE-REVIEW-2026-07-03.md §3).
+	pytest packages/llm-client/tests --cov=llm_client -q
+	pytest packages/satori-api/tests --cov=satori_api --cov-fail-under=90 -q
 
 dev-frontend:
 	@echo "Starting SvelteKit dev server (http://localhost:5173)..."
