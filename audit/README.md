@@ -14,7 +14,7 @@ These are audit-remediation agent tasks, not hos. Per the forward-only principle
 |---|------|------|--------|---------|
 | S1 | [Verification-stack repair](agent-task-2026-07-03-s1-verification-stack-repair.md) | ~2.5h | complete | `21d21ae`, `6142001`, `35ef368` |
 | S2 | [Case repair + regression harness](agent-task-2026-07-03-s2-case-repair-regression-harness.md) | ~2h | complete | `e9af5e5` |
-| S3 | [Determinism hardening + event contract](agent-task-2026-07-03-s3-determinism-hardening.md) | ~1.5h | ready | — |
+| S3 | [Determinism hardening + event contract](agent-task-2026-07-03-s3-determinism-hardening.md) | ~1.5h | complete | `b19114e` |
 | SP | [Emergency-mode design spike](agent-task-2026-07-03-sp-emergency-mode-design-spike.md) | ~1h | ready | — |
 | S4 | [Frontend ataxia fixes + narrator guard](agent-task-2026-07-03-s4-frontend-ataxia-narrator-guard.md) | ~1h | ready | — |
 
