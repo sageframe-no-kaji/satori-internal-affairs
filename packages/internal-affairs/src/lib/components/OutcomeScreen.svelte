@@ -102,12 +102,19 @@
     cursor: pointer;
     font-size: 0.95rem;
     font-weight: 600;
+    /* Sole control at case end — must meet the ataxia touch floor (audit UD-1) */
+    min-height: var(--touch-target-pref);
     padding: 10px 28px;
     transition: background 0.1s;
   }
 
   .reset-btn:hover {
     background: #364460;
+  }
+
+  .reset-btn:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
   }
 
   /* Tier colour overrides */

@@ -17,7 +17,7 @@
 
   --color-text:          #e8ecf2;   /* default text */
   --color-text-muted:    #a0a8b8;   /* secondary text */
-  --color-text-dim:      #6b7280;   /* tertiary / placeholder */
+  --color-text-dim:      #868e9e;   /* tertiary / placeholder — 5.2:1 on bg-panel, 5.7:1 on bg-app (WCAG AA; audit CON-1) */
 
   /* State colors — used sparingly, only when something IS in that state */
   --color-state-normal:   #5ec585;   /* green — vitals in range */
