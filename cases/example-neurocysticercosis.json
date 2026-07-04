@@ -1,7 +1,7 @@
 {
-  "_comment": "Hand-written example case v2 \u2014 Maria Santos / Neurocysticercosis. Redesigned for granular sub-action gating and narrative unlock chains.",
+  "_comment": "Hand-written example case v2.1 \u2014 Maria Santos / Neurocysticercosis. Redesigned for granular sub-action gating and narrative unlock chains. v2.1 (P2-H09): survivable crisis via emergency_intervention, post-crisis re-arm into a second crisis, timeout fallthrough tier, OPTIMAL window widened to 150, family_alienated wired into tier scoring.",
   "id": "550e8400-e29b-41d4-a716-446655440000",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "metadata": {
     "difficulty": "intermediate",
     "estimated_duration_minutes": 25,
@@ -830,6 +830,10 @@
                 "target": "case_start",
                 "value": 30,
                 "comparator": "gte"
+              },
+              {
+                "type": "flag_not_set",
+                "target": "family_engaged"
               }
             ]
           }
@@ -861,6 +865,10 @@
           {
             "type": "set_flag",
             "target": "undercooked_pork_exposure"
+          },
+          {
+            "type": "deactivate_node",
+            "target": "node_13_husband_diego"
           }
         ]
       },
@@ -868,7 +876,7 @@
         "category": "relational",
         "impact": "major"
       },
-      "teaching_note": "Diego arrives at T+30 and his timer runs 90 minutes \u2014 gone by T+120 if not engaged. Engage early. He holds the dietary clue the patient was too polite to share."
+      "teaching_note": "Diego arrives at T+30 and his timer runs 90 minutes \u2014 gone by T+120 if not engaged. Engage early. He holds the dietary clue the patient was too polite to share. Arrival is tick-quantized: this node activates on the first engine tick that crosses T+30, so Diego's actual arrival \u2014 and therefore his departure \u2014 varies with the player's action cadence. Acceptable, but known: consequences wired to this timer (family_alienated) inherit that variance."
     },
     {
       "id": "node_14_seizure_crisis",
@@ -883,6 +891,10 @@
               {
                 "type": "node_expired",
                 "target": "node_09_headache_progression"
+              },
+              {
+                "type": "flag_not_set",
+                "target": "crisis_managed"
               }
             ]
           }
@@ -929,12 +941,46 @@
             "type": "lock_action",
             "target": "physical_exam_focused"
           }
-        ]
+        ],
+        "on_intervene": {
+          "treatment": "emergency_intervention",
+          "effects": [
+            {
+              "type": "deactivate_node",
+              "target": "node_14_seizure_crisis"
+            },
+            {
+              "type": "set_flag",
+              "target": "crisis_managed"
+            },
+            {
+              "type": "clear_flag",
+              "target": "crisis_active"
+            },
+            {
+              "type": "unlock_action",
+              "target": "history_general"
+            },
+            {
+              "type": "unlock_action",
+              "target": "history_focused"
+            },
+            {
+              "type": "unlock_action",
+              "target": "physical_exam_general"
+            },
+            {
+              "type": "unlock_action",
+              "target": "physical_exam_focused"
+            }
+          ]
+        }
       },
       "outcome_weight": {
         "category": "medical",
         "impact": "critical"
-      }
+      },
+      "teaching_note": "Status epilepticus care: benzodiazepines and airway control end the seizure. emergency_intervention within the 5-minute window deactivates this node — the death clock is removed, vitals recover, and the investigation reopens. But the patient is stabilized, not safe: crisis_managed starts the post-crisis progression clock (node_20)."
     },
     {
       "id": "node_15_steroid_response",
@@ -1157,6 +1203,177 @@
         "impact": "critical"
       },
       "teaching_note": "The steroid rebound. Sixty minutes after dexamethasone is given, immune suppression accelerates the progression timeline by 60 minutes — the false improvement window is exactly the rebound delay. Activates only when steroids are actually administered."
+    },
+    {
+      "id": "node_20_post_crisis_progression",
+      "type": "progression",
+      "content": {
+        "narrative_text": "Silent post-crisis deterioration — not directly revealed. The seizure is over but the parasites are not. Effects manifest through vital sign changes."
+      },
+      "activation": {
+        "paths": [
+          {
+            "conditions": [
+              {
+                "type": "flag_set",
+                "target": "crisis_managed"
+              }
+            ]
+          }
+        ]
+      },
+      "reveal": null,
+      "timer": {
+        "duration_minutes": 90,
+        "pause_conditions": [
+          {
+            "type": "flag_set",
+            "target": "correct_treatment_started"
+          }
+        ],
+        "stages": [
+          {
+            "at_minutes": 30,
+            "effects": [],
+            "vital_signs": {
+              "heart_rate": 114,
+              "blood_pressure_systolic": 162,
+              "blood_pressure_diastolic": 100
+            }
+          },
+          {
+            "at_minutes": 60,
+            "effects": [],
+            "vital_signs": {
+              "heart_rate": 122,
+              "blood_pressure_systolic": 170,
+              "blood_pressure_diastolic": 106,
+              "o2_saturation": 93
+            }
+          }
+        ],
+        "on_expire": [
+          {
+            "type": "activate_node",
+            "target": "node_21_second_seizure_crisis"
+          }
+        ]
+      },
+      "vital_signs": {
+        "heart_rate": 108,
+        "blood_pressure_systolic": 156,
+        "blood_pressure_diastolic": 96,
+        "o2_saturation": 95
+      },
+      "outcome_weight": {
+        "category": "medical",
+        "impact": "critical"
+      },
+      "teaching_note": "The re-arm. Managing the seizure buys 90 minutes, not safety — untreated neurocysticercosis progresses to a second crisis. The stabilized window is the player's last chance to commit to treatment. Non-diegetic by design: the player reads it from the vitals, exactly like node_09."
+    },
+    {
+      "id": "node_21_second_seizure_crisis",
+      "type": "progression",
+      "content": {
+        "narrative_text": "It happens again — faster this time. Maria's head turns, her eyes deviate right, and the seizure takes her whole body. The monitor alarms are worse than before: HR 152. BP 78/44. SpO2 falling through 84%. The team looks at you. Whatever was building underneath the last ninety minutes has arrived."
+      },
+      "activation": {
+        "paths": [
+          {
+            "conditions": [
+              {
+                "type": "node_expired",
+                "target": "node_20_post_crisis_progression"
+              },
+              {
+                "type": "flag_not_set",
+                "target": "second_crisis_managed"
+              }
+            ]
+          }
+        ]
+      },
+      "reveal": {
+        "auto_reveal": true
+      },
+      "timer": {
+        "duration_minutes": 5,
+        "on_expire": [
+          {
+            "type": "activate_node",
+            "target": "node_16_patient_death"
+          }
+        ]
+      },
+      "vital_signs": {
+        "heart_rate": 152,
+        "blood_pressure_systolic": 78,
+        "blood_pressure_diastolic": 44,
+        "o2_saturation": 84,
+        "respiratory_rate": 5
+      },
+      "effects": {
+        "on_reveal": [
+          {
+            "type": "set_flag",
+            "target": "crisis_active"
+          },
+          {
+            "type": "lock_action",
+            "target": "history_general"
+          },
+          {
+            "type": "lock_action",
+            "target": "history_focused"
+          },
+          {
+            "type": "lock_action",
+            "target": "physical_exam_general"
+          },
+          {
+            "type": "lock_action",
+            "target": "physical_exam_focused"
+          }
+        ],
+        "on_intervene": {
+          "treatment": "emergency_intervention",
+          "effects": [
+            {
+              "type": "deactivate_node",
+              "target": "node_21_second_seizure_crisis"
+            },
+            {
+              "type": "set_flag",
+              "target": "second_crisis_managed"
+            },
+            {
+              "type": "clear_flag",
+              "target": "crisis_active"
+            },
+            {
+              "type": "unlock_action",
+              "target": "history_general"
+            },
+            {
+              "type": "unlock_action",
+              "target": "history_focused"
+            },
+            {
+              "type": "unlock_action",
+              "target": "physical_exam_general"
+            },
+            {
+              "type": "unlock_action",
+              "target": "physical_exam_focused"
+            }
+          ]
+        }
+      },
+      "outcome_weight": {
+        "category": "medical",
+        "impact": "critical"
+      },
+      "teaching_note": "The mechanic does not lie the second time: emergency_intervention rescues this crisis exactly as it rescued the first. A distinct node rather than a reactivation of node_14 — the second seizure on an untreated brain is a different, worse event, and its vitals say so. After a second rescue there is no third clock; the untreated run runs out at T+360 into the fallthrough tier."
     }
   ],
   "outcome_evaluation": {
@@ -1175,7 +1392,7 @@
         "time_constraints": [
           {
             "flag": "correct_treatment_started",
-            "before_minutes": 120
+            "before_minutes": 150
           }
         ],
         "narrative": "Maria recovers fully. The parasitic infection is identified and treated before the crisis can develop. Diego is informed and involved \u2014 he understands what happened, and he will quietly talk to his mother about the pork. Maria returns to work within weeks. She sends a thank-you note."
@@ -1187,7 +1404,8 @@
         ],
         "excluded_flags": [
           "patient_death",
-          "wrong_treatment_steroids"
+          "wrong_treatment_steroids",
+          "family_alienated"
         ],
         "time_constraints": [
           {
@@ -1205,7 +1423,7 @@
         "excluded_flags": [
           "patient_death"
         ],
-        "narrative": "Maria survives. Treatment was eventually correct, but the path there caused lasting harm. She has permanent neurological sequelae. This was preventable."
+        "narrative": "Maria survives. Treatment was eventually correct, but the path there caused lasting harm — a diagnosis that came late, or a husband who left the waiting room believing nobody would talk to him. She has permanent neurological sequelae. This was preventable."
       },
       {
         "tier": "failure",
@@ -1213,6 +1431,14 @@
           "patient_death"
         ],
         "narrative": "Maria died. The diagnosis was not reached in time, or the wrong treatment accelerated the deterioration past the point of recovery. She was 28 years old."
+      },
+      {
+        "tier": "failure",
+        "excluded_flags": [
+          "patient_death",
+          "correct_treatment_started"
+        ],
+        "narrative": "The shift ends with Maria still in the department — alive, deteriorating, undiagnosed. Six hours, and the answer was in her chart and in her family the whole time. She is transferred to the ICU under a working diagnosis that is wrong. What happens next happens without you."
       }
     ],
     "harmful_actions": [

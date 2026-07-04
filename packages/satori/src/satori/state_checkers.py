@@ -421,6 +421,10 @@ class StateCheckers:
 
         # Determine outcome tier
         outcome_tier = "failure"  # default
+        # Tier levels are not unique (two tiers can share the "failure"
+        # register), so record the matched tier's own authored narrative —
+        # a level-keyed lookup downstream would return the wrong text.
+        outcome_narrative: str | None = None
 
         for tier in self.case.outcome_evaluation.tiers:
             # Check required flags
@@ -450,6 +454,7 @@ class StateCheckers:
 
             # This tier matches
             outcome_tier = tier.tier
+            outcome_narrative = tier.narrative
             break
 
         # End the case
@@ -458,6 +463,7 @@ class StateCheckers:
             case_ended=True,
             outcome_tier=outcome_tier,
             end_reason=end_reason,
+            outcome_narrative=outcome_narrative,
         )
 
         events: list[Event] = [

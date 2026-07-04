@@ -11,8 +11,12 @@ invariants:
   clock, and the steroid rebound never fires when steroids are never given.
 - Empirical path: treating on suspicion (eosinophilia + ring-enhancing
   lesion, no confirmation) earns GOOD.
-- Confirmed path: confirmation + family engagement + treatment before 120
-  minutes earns OPTIMAL.
+- Confirmed path: confirmation + family engagement + treatment before 150
+  minutes (P2-H09 widened the window from 120) earns OPTIMAL — including
+  the natural sequencing the widening exists to reward; past 150 drops
+  to GOOD.
+- Relational failure: letting Diego leave un-engaged (family_alienated)
+  costs the GOOD tier (P2-H09); engaging him stops his departure clock.
 - Steroids: the rebound fires 60 minutes AFTER administration (not before),
   and a steroids run scores at most PARTIAL.
 - Blocked: treatment without any evidence is rejected.
@@ -159,7 +163,8 @@ class TestConfirmedPath:
     def test_confirmed_rigorous_path_scores_optimal(self, engine: SatoriEngine) -> None:
         """The rigor path: confirm via thigh X-ray (calcified cysticerci)
         with the family visit overlapped into result-delay windows, landing
-        treatment inside the 120-minute OPTIMAL constraint.
+        treatment inside the OPTIMAL constraint (150 as of P2-H09; this run
+        was already inside the original 120).
 
         t=0   history_general              -> 15
         t=15  physical_exam_focused:neuro  -> 25
@@ -192,6 +197,102 @@ class TestConfirmedPath:
         assert state.case_ended
         assert state.current_time_minutes == 116
         assert state.outcome_tier == "optimal"
+
+    def test_natural_sequencing_now_scores_optimal(self, engine: SatoriEngine) -> None:
+        """The P2-H09 widening exists for exactly this run: the same confirmed
+        + family-engaged path without delay-overlap micro-optimization. An
+        extra half-hour of natural pacing lands treatment at t=146 — GOOD
+        under the old 120-minute window, OPTIMAL under 150."""
+        engine.execute_action("history_general")
+        engine.execute_action("physical_exam_focused:neuro")
+        engine.execute_action("order_labs:cbc")
+        engine.execute_action("order_imaging:ct_head")
+        engine.execute_action("wait:30")
+        engine.execute_action("history_focused:dietary")
+        engine.execute_action("wait:15")
+        engine.execute_action("order_imaging_xray:extremity")
+        engine.execute_action("history_focused:family")
+        engine.execute_action("wait:15")  # t=111, X-ray confirmed
+        engine.execute_action("wait:30")  # t=141 — thinking it over
+        engine.execute_action("start_treatment:albendazole")  # t=146
+        state = engine.get_state()
+        assert state.case_ended
+        assert state.current_time_minutes == 146
+        assert state.outcome_tier == "optimal"
+
+    def test_confirmed_path_past_150_drops_to_good(self, engine: SatoriEngine) -> None:
+        """The widened window is still a real boundary: same confirmed +
+        engaged run, treatment at t=161 > 150 -> GOOD."""
+        engine.execute_action("history_general")
+        engine.execute_action("physical_exam_focused:neuro")
+        engine.execute_action("order_labs:cbc")
+        engine.execute_action("order_imaging:ct_head")
+        engine.execute_action("wait:30")
+        engine.execute_action("history_focused:dietary")
+        engine.execute_action("wait:15")
+        engine.execute_action("order_imaging_xray:extremity")
+        engine.execute_action("history_focused:family")
+        engine.execute_action("wait:15")  # t=111
+        engine.execute_action("wait:30")  # t=141
+        engine.execute_action("wait:15")  # t=156
+        engine.execute_action("start_treatment:albendazole")  # t=161
+        state = engine.get_state()
+        assert state.case_ended
+        assert state.current_time_minutes == 161
+        assert "family_alienated" not in state.flags  # engagement stopped Diego's clock
+        assert state.outcome_tier == "good"
+
+
+# ---------------------------------------------------------------------------
+# Scenario: relational failure — family_alienated costs the GOOD tier
+# ---------------------------------------------------------------------------
+
+
+class TestRelationalFailure:
+    def test_alienated_family_drops_good_to_partial(self, engine: SatoriEngine) -> None:
+        """Never engage Diego: node_13 activates at t=59 (first tick crossing
+        T+30) and its 90-minute timer expires at t=149, setting
+        family_alienated. Correct, confirmed treatment at t=166 (< 180) would
+        be GOOD — the relational failure costs the tier (P2-H09)."""
+        engine.execute_action("history_general")
+        engine.execute_action("physical_exam_focused:neuro")
+        engine.execute_action("order_labs:cbc")
+        engine.execute_action("order_imaging:ct_head")
+        engine.execute_action("wait:30")  # t=59, node_13 activates
+        engine.execute_action("history_focused:dietary")
+        engine.execute_action("wait:15")  # t=84
+        engine.execute_action("order_imaging_xray:extremity")  # t=86, due 106
+        engine.execute_action("wait:15")  # t=101
+        engine.execute_action("wait:15")  # t=116, confirmed
+        engine.execute_action("wait:30")  # t=146
+        engine.execute_action("wait:15")  # t=161 — Diego left at 149
+        state = engine.get_state()
+        assert "family_alienated" in state.flags
+        assert "family_engaged" not in state.flags
+
+        engine.execute_action("start_treatment:albendazole")  # t=166
+        state = engine.get_state()
+        assert state.case_ended
+        assert state.current_time_minutes == 166
+        assert state.outcome_tier == "partial"
+
+    def test_engaging_diego_stops_his_departure_clock(self, engine: SatoriEngine) -> None:
+        """Reveal deactivates node_13: once engaged, Diego does not 'leave' —
+        family_alienated must never fire on an engaged run, no matter how
+        long it goes."""
+        engine.execute_action("history_general")
+        engine.execute_action("wait:30")  # t=45, node_13 active
+        state = engine.get_state()
+        assert "node_13_husband_diego" in state.active_nodes
+        engine.execute_action("history_focused:family")  # t=55, engaged
+        state = engine.get_state()
+        assert "family_engaged" in state.flags
+        assert "node_13_husband_diego" not in state.timers
+
+        engine.execute_action("wait:60")
+        engine.execute_action("wait:60")  # t=175, far past any departure clock
+        state = engine.get_state()
+        assert "family_alienated" not in state.flags
 
 
 # ---------------------------------------------------------------------------

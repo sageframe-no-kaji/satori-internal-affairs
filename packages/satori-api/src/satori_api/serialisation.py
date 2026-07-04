@@ -75,6 +75,16 @@ def state_to_response(state: GameState) -> GameStateResponse:
             )
             for vt in state.visible_timers
         ],
+        emergency_timer=(
+            VisibleTimerResponse(
+                label=state.emergency_timer.label,
+                remaining_minutes=state.emergency_timer.remaining_minutes,
+                source=state.emergency_timer.source,
+                node_id=state.emergency_timer.node_id,
+            )
+            if state.emergency_timer is not None
+            else None
+        ),
         case_ended=state.case_ended,
         outcome_tier=state.outcome_tier,
         end_reason=state.end_reason,

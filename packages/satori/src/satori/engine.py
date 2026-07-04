@@ -10,7 +10,7 @@ from satori.action_parser import parse_action
 from satori.condition_evaluator import ConditionEvaluator
 from satori.effect_executor import EffectExecutor
 from satori.events import Event, NodeExpiredEvent, NodeRevealedEvent, TimeAdvancedEvent, TimerStageEvent, WaitedEvent
-from satori.game_state import GameState, compute_visible_timers
+from satori.game_state import GameState, compute_emergency_timer, compute_visible_timers
 from satori.models.case_definition import CaseDefinition, Node, NodeContent
 from satori.state_checkers import StateCheckers
 from satori.timer_manager import TimerManager
@@ -212,7 +212,12 @@ class SatoriEngine:
         state, _ = self.checkers.recompute_vitals(state)
 
         # Derive visible timers (diegetic pending_reveals + diegetic active timers)
-        state = replace(state, visible_timers=compute_visible_timers(state, self.case))
+        # and the emergency channel (None outside crises)
+        state = replace(
+            state,
+            visible_timers=compute_visible_timers(state, self.case),
+            emergency_timer=compute_emergency_timer(state, self.case),
+        )
 
         return state
 
@@ -344,8 +349,12 @@ class SatoriEngine:
         new_state, end_events = self.checkers.check_end_conditions(new_state)
         events.extend(end_events)
 
-        # 10. Update derived visible_timers field
-        new_state = replace(new_state, visible_timers=compute_visible_timers(new_state, self.case))
+        # 10. Update derived visible_timers + emergency_timer fields
+        new_state = replace(
+            new_state,
+            visible_timers=compute_visible_timers(new_state, self.case),
+            emergency_timer=compute_emergency_timer(new_state, self.case),
+        )
 
         self.state = new_state
         return events
@@ -446,8 +455,12 @@ class SatoriEngine:
         new_state, end_events = self.checkers.check_end_conditions(new_state)
         events.extend(end_events)
 
-        # Update derived visible_timers
-        new_state = replace(new_state, visible_timers=compute_visible_timers(new_state, self.case))
+        # Update derived visible_timers + emergency_timer
+        new_state = replace(
+            new_state,
+            visible_timers=compute_visible_timers(new_state, self.case),
+            emergency_timer=compute_emergency_timer(new_state, self.case),
+        )
 
         self.state = new_state
         return events

@@ -611,3 +611,64 @@ def test_outcome_narrative_matches_case_tier_text():
     assert tier is not None
     expected_narrative = tiers_by_name[tier]
     assert data["outcome_narrative"] == expected_narrative
+
+
+# ---------------------------------------------------------------------------
+# Emergency timer channel + fallthrough tier (P2-H09)
+# ---------------------------------------------------------------------------
+
+
+def _drive_to_crisis(sid: str) -> dict:
+    """history_general + 3x wait:60 -> seizure crisis at t=195. Returns final data."""
+    client.post(f"/api/sessions/{sid}/actions", json={"action": "history_general"})
+    data: dict = {}
+    for _ in range(3):
+        resp = client.post(f"/api/sessions/{sid}/actions", json={"action": "wait:60"})
+        data = resp.json()
+    return data
+
+
+def test_emergency_timer_field_present_and_null_outside_crisis():
+    sid = _start_session()
+    resp = client.post(f"/api/sessions/{sid}/actions", json={"action": "history_general"})
+    state = resp.json()["state"]
+    assert "emergency_timer" in state
+    assert state["emergency_timer"] is None
+
+
+def test_emergency_timer_populated_during_crisis_and_cleared_by_rescue():
+    sid = _start_session()
+    data = _drive_to_crisis(sid)
+    et = data["state"]["emergency_timer"]
+    assert et is not None
+    assert et["node_id"] == "node_14_seizure_crisis"
+    assert et["remaining_minutes"] == 5
+    assert et["source"] == "active_timer"
+    # The crisis clock does NOT leak into the diegetic channel
+    assert all(vt["node_id"] != "node_14_seizure_crisis" for vt in data["state"]["visible_timers"])
+
+    resp = client.post(f"/api/sessions/{sid}/actions", json={"action": "emergency_intervention"})
+    data = resp.json()
+    assert data["case_ended"] is False
+    assert data["state"]["emergency_timer"] is None
+    assert "crisis_managed" in data["state"]["flags"]
+
+
+def test_timeout_run_returns_fallthrough_narrative_not_death():
+    """Two rescued crises + timeout: outcome_narrative must be the authored
+    fallthrough text (patient alive, transferred), not the death tier's text
+    that a level-keyed lookup would return."""
+    sid = _start_session()
+    _drive_to_crisis(sid)
+    client.post(f"/api/sessions/{sid}/actions", json={"action": "emergency_intervention"})  # t=197
+    client.post(f"/api/sessions/{sid}/actions", json={"action": "wait:60"})  # t=257
+    client.post(f"/api/sessions/{sid}/actions", json={"action": "wait:60"})  # t=317, second crisis
+    client.post(f"/api/sessions/{sid}/actions", json={"action": "emergency_intervention"})  # t=319
+    final = client.post(f"/api/sessions/{sid}/actions", json={"action": "wait:60"})  # t=379 >= 360
+    data = final.json()
+    assert data["case_ended"] is True
+    assert data["outcome_tier"] == "failure"
+    assert "patient_death" not in data["state"]["flags"]
+    assert data["outcome_narrative"] is not None
+    assert "died" not in data["outcome_narrative"]
+    assert "transferred" in data["outcome_narrative"]

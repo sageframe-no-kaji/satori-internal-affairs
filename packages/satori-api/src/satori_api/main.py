@@ -183,7 +183,11 @@ def execute_action(session_id: str, body: ExecuteActionRequest) -> ActionRespons
         case_ended=state.case_ended,
         outcome_tier=state.outcome_tier,
         end_reason=state.end_reason,
-        outcome_narrative=resolve_tier_narrative(engine.case, state.outcome_tier),
+        # Prefer the narrative of the tier that actually matched (tier levels
+        # are not unique — two tiers can share the "failure" register); fall
+        # back to the level-keyed lookup for cases ended purely by an
+        # end_case effect, where no tier evaluation runs.
+        outcome_narrative=state.outcome_narrative or resolve_tier_narrative(engine.case, state.outcome_tier),
     )
 
 

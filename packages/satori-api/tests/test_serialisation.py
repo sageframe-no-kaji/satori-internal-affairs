@@ -199,6 +199,34 @@ def test_visible_timer_response_has_correct_fields():
 
 
 # ---------------------------------------------------------------------------
+# emergency_timer serialisation (P2-H09)
+# ---------------------------------------------------------------------------
+
+
+def test_state_to_response_emergency_timer_none_outside_crisis(engine: SatoriEngine):
+    """Outside an emergency the field is present and None."""
+    resp = state_to_response(engine.get_state())
+    assert hasattr(resp, "emergency_timer")
+    assert resp.emergency_timer is None
+
+
+def test_state_to_response_emergency_timer_populated_during_crisis():
+    """During the seizure crisis the active crisis clock serialises through
+    the separate channel; visible_timers stays diegetic-only."""
+    case = validate_case(EXAMPLE_CASE)
+    fresh_engine = SatoriEngine(case)
+    fresh_engine.execute_action("history_general")
+    for _ in range(3):
+        fresh_engine.execute_action("wait:60")  # crisis fires at t=195
+    resp = state_to_response(fresh_engine.get_state())
+    assert resp.emergency_timer is not None
+    assert resp.emergency_timer.node_id == "node_14_seizure_crisis"
+    assert resp.emergency_timer.remaining_minutes == 5
+    assert resp.emergency_timer.source == "active_timer"
+    assert all(vt.node_id != "node_14_seizure_crisis" for vt in resp.visible_timers)
+
+
+# ---------------------------------------------------------------------------
 # resolve_tier_narrative (P2-H07)
 # ---------------------------------------------------------------------------
 
