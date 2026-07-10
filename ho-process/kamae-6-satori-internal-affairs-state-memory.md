@@ -19,8 +19,8 @@ This file is the build's living cross-session memory: hot, mutable, and non-cano
 
 - **NEXT** — P2-H08 (Real LLM Narrator) is the only Phase 2 ho left before `v0.7`. It is **blocked on practitioner voice work** (register, prompt content — a thinking-conversation deliverable, not a coding session). The per-ho doc at `ho-process/hos/P2-H08-real-llm-narrator.md` specifies all plumbing and is marked DRAFT — VOICE WORK PENDING PRACTITIONER. Do not execute it until the voice work lands in that doc.
 
-- **ACTION ITEMS / BLOCKS** — (1) H08 blocked as above. (2) UD-4/UD-5 (dropdown focus-to-first-option + arrow keys) and UD-6 (outcome overlay focus trap) remain open from the audit — needs a small dedicated UI ho (H11 fixed UD-3 adjacent behavior: click-off close, visible lock reasons on focus). (3) npm audit advisories in the frontend tree (upgrades were out of H10 scope). (4) Frontend test framework still absent. (5) Emergency-mode dress not yet seen by eye under the new light palette — worth one crisis run-through next play session. No test regressions; 621 Python tests green through the pinned uv environment.
+- **ACTION ITEMS / BLOCKS** — (1) H08 blocked as above. (2) Frontend test framework still absent — the next good autonomous infrastructure ho (Vitest is the obvious default; keyboard/focus behaviors from H12 are currently pinned only by a manual script). (3) npm audit advisories in the frontend tree (upgrades were out of H10 scope). (4) Emergency-mode dress not yet seen by eye under the new light palette — worth one crisis run-through next play session. Audit UD-4/5/6 and C-8 are now CLOSED (P2-H12 `focus management`, P2-H13 `session locks + TTL`, both 2026-07-10). No test regressions; 628 Python tests green through the pinned uv environment.
 
 - **PROJECT LIFECYCLE** — dev
 
-_Updated 2026-07-10 after P2-H11 (practitioner-attended visual pass; palette + shell approved on screen)._
+_Updated 2026-07-10 after P2-H12/H13 (autonomous audit-debt hos; H11 visual pass earlier same day)._
