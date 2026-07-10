@@ -58,6 +58,9 @@ pnpm-lock.yaml
 ehthumbs.db
 Thumbs.db
 
+# Private prompts (practitioner convention — session prompts stay local)
+prompts/
+
 # Obsidian
 .obsidian/
 
