@@ -654,6 +654,32 @@ def test_emergency_timer_populated_during_crisis_and_cleared_by_rescue():
     assert "crisis_managed" in data["state"]["flags"]
 
 
+def test_findings_present_and_empty_on_session_create():
+    resp = client.post("/api/sessions", json={"case_path": EXAMPLE_CASE})
+    state = resp.json()["state"]
+    assert "findings" in state
+    assert state["findings"] == []
+
+
+def test_findings_accumulate_through_the_action_endpoint():
+    """P2-H03: the evidence board grows as findings reveal, in chronological
+    order, with category/label/timestamp on each card's data."""
+    sid = _start_session()
+    client.post(f"/api/sessions/{sid}/actions", json={"action": "history_general"})
+    client.post(f"/api/sessions/{sid}/actions", json={"action": "order_labs:cbc"})
+    resp = client.post(f"/api/sessions/{sid}/actions", json={"action": "wait:60"})
+    findings = resp.json()["state"]["findings"]
+    ids = [f["node_id"] for f in findings]
+    assert ids[0] == "node_01_chief_complaint"
+    assert "node_04_cbc_results" in ids
+    times = [f["revealed_at_minutes"] for f in findings]
+    assert times == sorted(times)
+    cbc = next(f for f in findings if f["node_id"] == "node_04_cbc_results")
+    assert cbc["category"] == "lab_result"
+    assert cbc["label"] == "Cbc Results"
+    assert cbc["structured_data"]["eosinophils_flag"] == "HIGH"
+
+
 def test_emergency_active_field_present_and_false_outside_crisis():
     sid = _start_session()
     resp = client.post(f"/api/sessions/{sid}/actions", json={"action": "history_general"})

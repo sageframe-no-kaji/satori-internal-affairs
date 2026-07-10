@@ -4,7 +4,7 @@ GameState is immutable - all updates create new instances.
 This enables deterministic replay and state snapshots.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Literal
 from uuid import UUID
 
@@ -74,6 +74,12 @@ class GameState:
     # Available actions (initialized from action_costs keys, modified by effects)
     available_actions: frozenset[str]
 
+    # When each node revealed: {node_id: game_minutes}. Keys stay in lockstep
+    # with revealed_nodes — the evidence board (P2-H03) and the debrief need
+    # to know WHEN the character learned each fact, and frozensets carry no
+    # order. Treat as immutable by convention — copy on write in updates.
+    revealed_at: dict[str, int] = field(default_factory=dict)
+
     # Case resolution
     case_ended: bool = False
     outcome_tier: str | None = None
@@ -104,7 +110,7 @@ class GameState:
     outcome_narrative: str | None = None
 
 
-def _humanise_node_id(node_id: str) -> str:
+def humanise_node_id(node_id: str) -> str:
     """Convert a snake_case node_id to a human-readable label.
 
     Example: "node_04_cbc_results" -> "CBC Results"
@@ -147,9 +153,9 @@ def compute_visible_timers(state: "GameState", case: CaseDefinition) -> tuple[Vi
         label: str
         if node is not None:
             raw_label = getattr(node, "display_name", None) or ""
-            label = raw_label if raw_label else _humanise_node_id(node_id)
+            label = raw_label if raw_label else humanise_node_id(node_id)
         else:
-            label = _humanise_node_id(node_id)
+            label = humanise_node_id(node_id)
         timers.append(
             VisibleTimer(
                 label=label,
@@ -167,7 +173,7 @@ def compute_visible_timers(state: "GameState", case: CaseDefinition) -> tuple[Vi
         if node is None or node.timer is None or not node.timer.diegetic:
             continue
         raw_label = getattr(node, "display_name", None) or ""
-        label = raw_label if raw_label else _humanise_node_id(node_id)
+        label = raw_label if raw_label else humanise_node_id(node_id)
         timers.append(
             VisibleTimer(
                 label=label,
@@ -233,7 +239,7 @@ def compute_emergency_timer(state: "GameState", case: CaseDefinition) -> Visible
             continue
         candidates.append(
             VisibleTimer(
-                label=_humanise_node_id(node_id),
+                label=humanise_node_id(node_id),
                 remaining_minutes=remaining,
                 source="active_timer",
                 node_id=node_id,

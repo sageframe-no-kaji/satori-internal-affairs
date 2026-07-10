@@ -197,9 +197,13 @@ class TimerManager:
                 # Update remaining time
                 new_pending[node_id] = new_remaining
 
-        # Remove completed reveals and add to revealed_nodes
-        for node_id in completed_reveal_ids:
+        # Remove completed reveals and add to revealed_nodes.
+        # Sorted: revealed_at insertion order must not depend on set iteration
+        # order, which varies with the per-process hash seed (audit C-2).
+        new_revealed_at = dict(state.revealed_at)
+        for node_id in sorted(completed_reveal_ids):
             new_pending.pop(node_id, None)
+            new_revealed_at[node_id] = new_state.current_time_minutes
 
         new_revealed = set(state.revealed_nodes) | completed_reveal_ids
 
@@ -208,6 +212,7 @@ class TimerManager:
             new_state,
             pending_reveals=new_pending,
             revealed_nodes=frozenset(new_revealed),
+            revealed_at=new_revealed_at,
         )
 
         return new_state, events

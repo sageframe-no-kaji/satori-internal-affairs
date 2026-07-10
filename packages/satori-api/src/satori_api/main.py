@@ -176,7 +176,7 @@ def execute_action(session_id: str, body: ExecuteActionRequest) -> ActionRespons
     return ActionResponse(
         events=events_to_responses(events),
         narrations=narrations,
-        state=state_to_response(state),
+        state=state_to_response(state, engine.case),
         patient_condition=condition.value,
         available_actions=sorted(state.available_actions),
         playable_actions=sorted(engine.get_playable_actions()),

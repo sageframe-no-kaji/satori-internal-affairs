@@ -16,6 +16,7 @@ from satori_api.serialisation import (
 )
 
 EXAMPLE_CASE = "cases/example-neurocysticercosis.json"
+CASE = validate_case(EXAMPLE_CASE)
 
 
 @pytest.fixture(scope="module")
@@ -26,7 +27,7 @@ def engine() -> SatoriEngine:
 
 def test_state_to_response_frozensets_become_lists(engine: SatoriEngine):
     state = engine.get_state()
-    resp = state_to_response(state)
+    resp = state_to_response(state, CASE)
     assert isinstance(resp.flags, list)
     assert isinstance(resp.active_nodes, list)
     assert isinstance(resp.revealed_nodes, list)
@@ -36,7 +37,7 @@ def test_state_to_response_frozensets_become_lists(engine: SatoriEngine):
 
 def test_state_to_response_lists_are_sorted(engine: SatoriEngine):
     state = engine.get_state()
-    resp = state_to_response(state)
+    resp = state_to_response(state, CASE)
     assert resp.flags == sorted(resp.flags)
     assert resp.active_nodes == sorted(resp.active_nodes)
     assert resp.available_actions == sorted(resp.available_actions)
@@ -44,13 +45,13 @@ def test_state_to_response_lists_are_sorted(engine: SatoriEngine):
 
 def test_state_to_response_case_id_is_string(engine: SatoriEngine):
     state = engine.get_state()
-    resp = state_to_response(state)
+    resp = state_to_response(state, CASE)
     assert isinstance(resp.case_id, str)
 
 
 def test_state_to_response_vitals_shape(engine: SatoriEngine):
     state = engine.get_state()
-    resp = state_to_response(state)
+    resp = state_to_response(state, CASE)
     vitals = resp.current_vitals
     # All six vital fields must be int/float/None
     for field in (
@@ -129,7 +130,7 @@ def test_vitals_to_response_all_fields(engine: SatoriEngine):
 
 def test_state_to_response_subfields_present(engine: SatoriEngine):
     """GameStateResponse must include pending_reveals, timers, timer_stages."""
-    resp = state_to_response(engine.get_state())
+    resp = state_to_response(engine.get_state(), CASE)
     assert isinstance(resp.pending_reveals, dict)
     assert isinstance(resp.timers, dict)
     assert isinstance(resp.timer_stages, dict)
@@ -156,14 +157,14 @@ def test_events_to_responses_event_types_are_strings(engine: SatoriEngine):
 def test_state_to_response_has_visible_timers_field(engine: SatoriEngine):
     """state_to_response must include a visible_timers list."""
     state = engine.get_state()
-    resp = state_to_response(state)
+    resp = state_to_response(state, CASE)
     assert hasattr(resp, "visible_timers")
     assert isinstance(resp.visible_timers, list)
 
 
 def test_state_to_response_visible_timers_empty_at_start(engine: SatoriEngine):
     """At game start with no diegetic timers, visible_timers is an empty list."""
-    resp = state_to_response(engine.get_state())
+    resp = state_to_response(engine.get_state(), CASE)
     assert resp.visible_timers == []
 
 
@@ -173,7 +174,7 @@ def test_state_to_response_visible_timers_populated_after_lab_order():
     fresh_engine = SatoriEngine(case)
     fresh_engine.execute_action("history_general")
     fresh_engine.execute_action("order_labs:cbc")
-    resp = state_to_response(fresh_engine.get_state())
+    resp = state_to_response(fresh_engine.get_state(), CASE)
     assert len(resp.visible_timers) > 0
     vt = resp.visible_timers[0]
     assert vt.source == "pending_reveal"
@@ -205,7 +206,7 @@ def test_visible_timer_response_has_correct_fields():
 
 def test_state_to_response_emergency_timer_none_outside_crisis(engine: SatoriEngine):
     """Outside an emergency the field is present and None."""
-    resp = state_to_response(engine.get_state())
+    resp = state_to_response(engine.get_state(), CASE)
     assert hasattr(resp, "emergency_timer")
     assert resp.emergency_timer is None
 
@@ -218,7 +219,7 @@ def test_state_to_response_emergency_timer_populated_during_crisis():
     fresh_engine.execute_action("history_general")
     for _ in range(3):
         fresh_engine.execute_action("wait:60")  # crisis fires at t=195
-    resp = state_to_response(fresh_engine.get_state())
+    resp = state_to_response(fresh_engine.get_state(), CASE)
     assert resp.emergency_timer is not None
     assert resp.emergency_timer.node_id == "node_14_seizure_crisis"
     assert resp.emergency_timer.remaining_minutes == 5
@@ -233,7 +234,7 @@ def test_state_to_response_emergency_timer_populated_during_crisis():
 
 def test_state_to_response_emergency_active_false_outside_crisis(engine: SatoriEngine):
     """Outside an emergency the field is present and False."""
-    resp = state_to_response(engine.get_state())
+    resp = state_to_response(engine.get_state(), CASE)
     assert resp.emergency_active is False
 
 
@@ -245,9 +246,75 @@ def test_state_to_response_emergency_active_true_during_crisis():
     fresh_engine.execute_action("history_general")
     for _ in range(3):
         fresh_engine.execute_action("wait:60")  # crisis fires at t=195
-    resp = state_to_response(fresh_engine.get_state())
+    resp = state_to_response(fresh_engine.get_state(), CASE)
     assert resp.emergency_active is True
     assert resp.emergency_timer is not None
+
+
+# ---------------------------------------------------------------------------
+# findings serialisation (P2-H03)
+# ---------------------------------------------------------------------------
+
+
+def test_state_to_response_findings_empty_at_start(engine: SatoriEngine):
+    """Nothing is revealed at t=0 — the evidence board starts empty."""
+    resp = state_to_response(engine.get_state(), CASE)
+    assert resp.findings == []
+
+
+def test_findings_carry_content_category_label_and_timestamp():
+    fresh_engine = SatoriEngine(CASE)
+    fresh_engine.execute_action("history_general")  # node_01 reveals at t=15
+    resp = state_to_response(fresh_engine.get_state(), CASE)
+    assert len(resp.findings) == 1
+    f = resp.findings[0]
+    assert f.node_id == "node_01_chief_complaint"
+    assert f.category == "history"
+    assert f.label == "Chief Complaint"
+    assert len(f.narrative_text) > 0
+    assert f.revealed_at_minutes == 15
+
+
+def test_findings_include_structured_data_for_labs():
+    fresh_engine = SatoriEngine(CASE)
+    fresh_engine.execute_action("history_general")
+    fresh_engine.execute_action("order_labs:cbc")
+    fresh_engine.execute_action("wait:60")  # CBC completes mid-wait
+    resp = state_to_response(fresh_engine.get_state(), CASE)
+    cbc = next(f for f in resp.findings if f.node_id == "node_04_cbc_results")
+    assert cbc.category == "lab_result"
+    assert cbc.structured_data is not None
+    assert cbc.structured_data["eosinophils_flag"] == "HIGH"
+
+
+def test_findings_sorted_chronologically():
+    fresh_engine = SatoriEngine(CASE)
+    fresh_engine.execute_action("history_general")  # t=15
+    fresh_engine.execute_action("physical_exam_general")  # t=30
+    fresh_engine.execute_action("order_labs:cbc")  # t=32; completes at 62
+    fresh_engine.execute_action("wait:60")  # t=92
+    resp = state_to_response(fresh_engine.get_state(), CASE)
+    times = [f.revealed_at_minutes for f in resp.findings]
+    assert times == sorted(times)
+    assert [f.node_id for f in resp.findings][:2] == [
+        "node_01_chief_complaint",
+        "node_02_general_exam",
+    ]
+
+
+def test_findings_exclude_non_evidence_node_types():
+    """The revealed seizure crisis (progression) is feed material, not a
+    finding — the evidence board carries clinical knowledge only."""
+    fresh_engine = SatoriEngine(CASE)
+    fresh_engine.execute_action("history_general")
+    for _ in range(3):
+        fresh_engine.execute_action("wait:60")  # crisis (auto-reveal) at t=195
+    state = fresh_engine.get_state()
+    assert "node_14_seizure_crisis" in state.revealed_nodes
+    resp = state_to_response(state, CASE)
+    assert all(f.node_id != "node_14_seizure_crisis" for f in resp.findings)
+    excluded = ("progression", "outcome", "behavioral", "intervention_response")
+    assert all(f.category not in excluded for f in resp.findings)
 
 
 # ---------------------------------------------------------------------------

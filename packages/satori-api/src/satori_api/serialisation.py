@@ -5,16 +5,34 @@ Serialisation helpers: convert Satori domain objects → API response models.
 from __future__ import annotations
 
 from satori import Event, GameState, SatoriEngine
+from satori.game_state import humanise_node_id
 from satori.models import CaseDefinition
+from satori.models.case_definition import NodeType
 from satori.patient_condition import compute_patient_condition
 
 from satori_api.models import (
     EventResponse,
+    FindingResponse,
     GameStateResponse,
     PatientContextResponse,
     SessionResponse,
     VisibleTimerResponse,
     VitalSignsResponse,
+)
+
+# Node types that belong on the evidence board (P2-H03). The others —
+# progression, behavioral, intervention_response, outcome — are narrative
+# events, not findings; they live in the feed. EMOTIONAL is included ahead
+# of need: no case authors one yet, but it is player-learned knowledge.
+FINDING_NODE_TYPES = frozenset(
+    {
+        NodeType.HISTORY,
+        NodeType.MEDICAL_FINDING,
+        NodeType.LAB_RESULT,
+        NodeType.IMAGING,
+        NodeType.RELATIONAL,
+        NodeType.EMOTIONAL,
+    }
 )
 
 
@@ -52,7 +70,34 @@ def vitals_to_response(vitals: object) -> VitalSignsResponse:
     )
 
 
-def state_to_response(state: GameState) -> GameStateResponse:
+def findings_to_responses(state: GameState, case: CaseDefinition) -> list[FindingResponse]:
+    """Compose the evidence board from revealed nodes (P2-H03).
+
+    Filters revealed nodes to the finding types, carries the authored content
+    (case data, not narrator output), and sorts chronologically by
+    (revealed_at_minutes, node_id) — deterministic accumulation order.
+    """
+    findings: list[FindingResponse] = []
+    for node in case.nodes:
+        if node.id not in state.revealed_nodes or node.type not in FINDING_NODE_TYPES:
+            continue
+        findings.append(
+            FindingResponse(
+                node_id=node.id,
+                category=node.type.value,
+                label=humanise_node_id(node.id),
+                narrative_text=node.content.narrative_text,
+                structured_data=node.content.structured_data,
+                # 0 fallback cannot occur in play (revealed_at keys mirror
+                # revealed_nodes); it guards hand-built states in tests.
+                revealed_at_minutes=state.revealed_at.get(node.id, 0),
+            )
+        )
+    findings.sort(key=lambda f: (f.revealed_at_minutes, f.node_id))
+    return findings
+
+
+def state_to_response(state: GameState, case: CaseDefinition) -> GameStateResponse:
     """Convert an immutable GameState to a JSON-serialisable GameStateResponse."""
     return GameStateResponse(
         case_id=str(state.case_id),
@@ -86,6 +131,7 @@ def state_to_response(state: GameState) -> GameStateResponse:
             if state.emergency_timer is not None
             else None
         ),
+        findings=findings_to_responses(state, case),
         case_ended=state.case_ended,
         outcome_tier=state.outcome_tier,
         end_reason=state.end_reason,
@@ -140,7 +186,7 @@ def build_session_response(session_id: str, engine: SatoriEngine) -> SessionResp
     condition = compute_patient_condition(state, engine.case)
     return SessionResponse(
         session_id=session_id,
-        state=state_to_response(state),
+        state=state_to_response(state, engine.case),
         patient=patient_to_response(engine.case),
         patient_condition=condition.value,
         available_actions=sorted(state.available_actions),

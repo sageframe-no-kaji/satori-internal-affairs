@@ -77,7 +77,7 @@
 
     <!-- Row 3: three-column body -->
     <div class="dashboard-body">
-      <ActiveConcernsPanel findings={[]} />
+      <ActiveConcernsPanel findings={game.findings} />
       <NarrativeFeedPanel events={game.eventLog} />
       <PendingResultsPanel timers={game.visibleTimers} />
     </div>

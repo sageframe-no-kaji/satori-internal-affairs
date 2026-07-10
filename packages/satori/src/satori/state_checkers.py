@@ -81,7 +81,11 @@ class StateCheckers:
             if node.reveal.auto_reveal:
                 # Reveal the node
                 new_revealed = set(state.revealed_nodes) | {node_id}
-                new_state = replace(new_state, revealed_nodes=frozenset(new_revealed))
+                new_state = replace(
+                    new_state,
+                    revealed_nodes=frozenset(new_revealed),
+                    revealed_at={**new_state.revealed_at, node_id: state.current_time_minutes},
+                )
 
                 events.append(
                     NodeRevealedEvent(
@@ -171,7 +175,11 @@ class StateCheckers:
                 else:
                     # Immediate reveal
                     new_revealed = set(new_state.revealed_nodes) | {node_id}
-                    new_state = replace(new_state, revealed_nodes=frozenset(new_revealed))
+                    new_state = replace(
+                        new_state,
+                        revealed_nodes=frozenset(new_revealed),
+                        revealed_at={**new_state.revealed_at, node_id: state.current_time_minutes},
+                    )
 
                     events.append(
                         NodeRevealedEvent(

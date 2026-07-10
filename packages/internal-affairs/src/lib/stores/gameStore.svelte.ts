@@ -16,6 +16,7 @@ import { createSession, executeAction, ApiError } from '$lib/api';
 import type {
   AppView,
   EventLogEntry,
+  Finding,
   GameState,
   PatientCondition,
   PatientContext,
@@ -155,6 +156,11 @@ function createGameStore() {
     /** Diegetic timers from the latest game state. Empty array when no session. */
     get visibleTimers(): VisibleTimer[] {
       return gameState?.visible_timers ?? [];
+    },
+
+    /** Revealed clinical findings, chronological, server-composed (P2-H03). */
+    get findings(): Finding[] {
+      return gameState?.findings ?? [];
     },
 
     /** True while a crisis is in progress (server-derived; P2-H05). */

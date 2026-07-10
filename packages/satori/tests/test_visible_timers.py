@@ -9,7 +9,7 @@ from __future__ import annotations
 from pathlib import Path
 from uuid import UUID
 
-from satori.game_state import GameState, _humanise_node_id, compute_visible_timers
+from satori.game_state import GameState, compute_visible_timers, humanise_node_id
 from satori.models.case_definition import (
     ActivationRule,
     CaseDefinition,
@@ -136,26 +136,26 @@ def _make_state(
 
 
 # ---------------------------------------------------------------------------
-# _humanise_node_id
+# humanise_node_id
 # ---------------------------------------------------------------------------
 
 
 def test_humanise_strips_node_prefix() -> None:
-    assert _humanise_node_id("node_04_cbc_results") == "Cbc Results"
+    assert humanise_node_id("node_04_cbc_results") == "Cbc Results"
 
 
 def test_humanise_no_prefix() -> None:
     # No node_NN_ prefix — capitalise all words
-    assert _humanise_node_id("my_timer") == "My Timer"
+    assert humanise_node_id("my_timer") == "My Timer"
 
 
 def test_humanise_single_word() -> None:
-    assert _humanise_node_id("node_01_history") == "History"
+    assert humanise_node_id("node_01_history") == "History"
 
 
 def test_humanise_empty_remainder() -> None:
     # Pathological case: only "node_01" with no trailing words
-    result = _humanise_node_id("node_01")
+    result = humanise_node_id("node_01")
     # Falls back to the original string when no label parts
     assert result == "node_01"
 

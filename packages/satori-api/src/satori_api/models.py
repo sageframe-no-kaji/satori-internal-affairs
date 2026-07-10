@@ -74,6 +74,23 @@ class PatientContextResponse(BaseModel):
     triage_note: str | None = None
 
 
+class FindingResponse(BaseModel):
+    """A revealed clinical finding for the evidence board (P2-H03).
+
+    Composed server-side from state + case data: the frontend never decides
+    what counts as evidence (Truth Line). ``category`` is the node's type
+    verbatim (history, medical_finding, lab_result, imaging, relational);
+    display grouping is the frontend's concern.
+    """
+
+    node_id: str
+    category: str
+    label: str
+    narrative_text: str
+    structured_data: dict[str, Any] | None = None
+    revealed_at_minutes: int
+
+
 class GameStateResponse(BaseModel):
     """
     Serialised GameState — all frozensets become sorted lists for stable JSON.
@@ -96,6 +113,7 @@ class GameStateResponse(BaseModel):
     visible_timers: list[VisibleTimerResponse]
     emergency_active: bool = False
     emergency_timer: VisibleTimerResponse | None = None
+    findings: list[FindingResponse] = Field(default_factory=list)
     case_ended: bool
     outcome_tier: str | None = None
     end_reason: str | None = None

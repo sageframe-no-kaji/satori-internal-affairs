@@ -54,6 +54,24 @@ export interface VisibleTimer {
 }
 
 // ---------------------------------------------------------------------------
+// Findings (P2-H03)
+// ---------------------------------------------------------------------------
+
+/**
+ * A revealed clinical finding for the evidence board. Composed server-side
+ * (the frontend never decides what counts as evidence); category is the
+ * node type verbatim — display grouping happens in ActiveConcernsPanel.
+ */
+export interface Finding {
+  node_id: string;
+  category: string;
+  label: string;
+  narrative_text: string;
+  structured_data: Record<string, unknown> | null;
+  revealed_at_minutes: number;
+}
+
+// ---------------------------------------------------------------------------
 // Game state
 // ---------------------------------------------------------------------------
 
@@ -74,6 +92,8 @@ export interface GameState {
   emergency_active: boolean;
   /** The active crisis countdown — the one non-diegetic timer shown (P2-H09). */
   emergency_timer: VisibleTimer | null;
+  /** Revealed clinical findings, chronological (P2-H03). */
+  findings: Finding[];
   case_ended: boolean;
   outcome_tier: string | null;
   end_reason: string | null;
