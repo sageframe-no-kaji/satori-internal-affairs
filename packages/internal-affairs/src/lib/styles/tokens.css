@@ -3,32 +3,38 @@
   All components read from these custom properties.
   No hex codes or magic-number px values in component styles.
 
+  Theme (P2-H11, practitioner decision): light clinical app — pale cool-grey
+  ground, white panels, ink text, scrub-teal interactives — with the vitals
+  strip as a dark monitor inset (its own --color-monitor-* group below).
+  All text pairs WCAG AA-verified; ratios noted where they are close.
+
   To adjust the visual design, change values here.
   One-file change, everywhere updates.
 */
 
 :root {
-  /* Colors — clinical hospital palette, restrained */
-  --color-bg-app:        #0e1218;   /* page background, near-black */
-  --color-bg-panel:      #161b24;   /* panel background */
-  --color-bg-panel-alt:  #1c2230;   /* alternating row / hover */
-  --color-border:        #2a3142;   /* default panel border */
-  --color-border-strong: #3d4458;   /* emphasised border */
+  /* Colors — clinical daylight */
+  --color-bg-app:        #eef1f4;   /* page ground, pale cool grey */
+  --color-bg-panel:      #ffffff;   /* panel background */
+  --color-bg-panel-alt:  #f5f8fa;   /* cards / alternating rows / hover */
+  --color-border:        #d9dfe6;   /* default panel border */
+  --color-border-strong: #b9c2cc;   /* emphasised border */
 
-  --color-text:          #e8ecf2;   /* default text */
-  --color-text-muted:    #a0a8b8;   /* secondary text */
-  --color-text-dim:      #868e9e;   /* tertiary / placeholder — 5.2:1 on bg-panel, 5.7:1 on bg-app (WCAG AA; audit CON-1) */
+  --color-text:          #1d2733;   /* default text — 15.1:1 on white */
+  --color-text-muted:    #5a6675;   /* secondary — 5.9:1 white, 5.5:1 panel-alt */
+  --color-text-dim:      #667280;   /* tertiary — 4.9:1 white, 4.6:1 panel-alt (AA floor) */
 
-  /* State colors — used sparingly, only when something IS in that state */
-  --color-state-normal:   #5ec585;   /* green — vitals in range */
-  --color-state-warning:  #e0a83a;   /* amber — vitals trending */
-  --color-state-critical: #d65555;   /* red — vitals out of range, emergencies */
-  --color-state-info:     #6ba3d6;   /* blue — neutral state info */
+  /* State colors — used sparingly, only when something IS in that state.
+     Tuned for LIGHT backgrounds; the dark monitor inset has its own set. */
+  --color-state-normal:   #157a4f;   /* green — 5.4:1 on white */
+  --color-state-warning:  #a06b00;   /* amber — 4.6:1 on white */
+  --color-state-critical: #b32e2e;   /* red — 6.3:1 on white, 5.6:1 on the emergency tint */
+  --color-state-info:     #2d6da8;   /* blue — 5.4:1 on white */
 
-  /* Accent — interactive elements */
-  --color-accent:         #7ab0ff;   /* default interactive */
-  --color-accent-hover:   #a6c8ff;
-  --color-accent-active:  #c5dbff;
+  /* Accent — interactive elements, scrub teal */
+  --color-accent:         #0e7c86;   /* 5.0:1 on white */
+  --color-accent-hover:   #0a6570;
+  --color-accent-active:  #084f58;
 
   /* Spacing — generous defaults for Universal Design */
   --space-1: 4px;
@@ -55,30 +61,65 @@
   --touch-target-gap:    var(--space-4);   /* minimum spacing between hit targets */
 
   /* Overlay and error backgrounds */
-  --color-overlay-bg:         rgba(14, 18, 24, 0.85);  /* modal backdrop */
-  --color-error-bg:           #3a1010;
-  --color-error-border:       #5a1a1a;
+  --color-overlay-bg:         rgba(29, 39, 51, 0.45);  /* modal backdrop over the light app */
+  --color-error-bg:           #fbeeee;
+  --color-error-border:       #efc9c9;
 
-  /* Emergency mode (P2-H05) — banner signature + locked-action treatment */
-  --color-emergency-bg:        #5a1218;               /* banner crimson — 12.5:1 with emergency-text */
-  --color-emergency-text:      #ffe9e9;               /* banner label/countdown text */
-  --color-emergency-entry-bg:  rgba(214, 85, 85, 0.08); /* narrative-feed emergency entry tint */
-  --color-emergency-label:     #e07a7a;                /* red TEXT on dark tints — 5.5:1 where state-critical falls under AA */
-  --emergency-dim-opacity:     0.6;                   /* de-emphasised side panels during a crisis */
-  --emergency-locked-opacity:  0.35;                  /* locked actions stay in place, grayed */
+  /* Monitor inset (P2-H11) — the vitals strip is the one dark, diegetic
+     device on the page. Scoped state colors: the light-theme state colors
+     fail AA on these backgrounds. */
+  --color-monitor-bg:       #0d141c;
+  --color-monitor-cell:     #101a24;
+  --color-monitor-border:   #22303e;
+  --color-monitor-label:    #8fa0b2;   /* 6.6:1 on cell */
+  --color-monitor-unit:     #7d8fa3;   /* 5.3:1 on cell */
+  --color-monitor-normal:   #4ade8f;   /* 10.2:1 */
+  --color-monitor-warning:  #ffc65c;   /* 11.3:1 */
+  --color-monitor-critical: #ff8080;   /* 7.2:1 */
+  --color-monitor-info:     #7cc4f0;
+  --shadow-monitor-inset:   inset 0 0 24px rgba(0, 0, 0, 0.5);
+  --glow-normal:            0 0 10px rgba(74, 222, 143, 0.35);
+  --glow-warning:           0 0 10px rgba(255, 198, 92, 0.3);
+  --glow-critical:          0 0 10px rgba(255, 128, 128, 0.35);
 
-  /* Condition badge backgrounds — dark tints behind state colours */
+  /* Condition badge tints — MONITOR-SCOPED (the badge lives inside the dark
+     strip); pair with --color-monitor-* text colors, never the light set. */
   --color-badge-bg-normal:    #1a3a2a;
-  --color-badge-bg-warning:   #2d3312;
+  --color-badge-bg-warning:   #33301a;
   --color-badge-bg-decomp:    #3a2810;
   --color-badge-bg-critical:  #3a1010;
   --color-badge-bg-dead:      #282828;
   --color-badge-bg-recovered: #0d2d3a;
 
+  /* Finding chips (P2-H03) — light amber, for cards on light panels */
+  --color-chip-bg:   #fdf3dd;
+  --color-chip-text: #8a5c00;   /* 5.3:1 on chip-bg */
+
+  /* Fresh-evidence highlight (P2-H11) — light green marks sections/cards
+     holding findings that arrived on the latest turn */
+  --color-fresh-bg:   #d7ecdf;
+  --color-fresh-text: #116343;   /* 5.9:1 on fresh-bg */
+
+  /* Tier tint borders — outcome card accent borders, decorative */
+  --color-tint-normal:   #d7ecdf;
+  --color-tint-info:     #d3e5f4;
+  --color-tint-warning:  #f2e6c3;
+  --color-tint-critical: #efc9c9;
+
+  /* Emergency mode (P2-H05) — banner signature + locked-action treatment.
+     Crimson holds its own on the light app; the banner is solid. */
+  --color-emergency-bg:        #b32e2e;               /* banner + intervention button */
+  --color-emergency-bg-hover:  #8f2424;               /* intervention button hover/focus */
+  --color-emergency-text:      #ffffff;               /* 6.3:1 on emergency-bg */
+  --color-emergency-entry-bg:  #fbeeee;               /* narrative-feed emergency entry tint */
+  --color-emergency-label:     #b32e2e;               /* red text on the entry tint — 5.6:1 */
+  --emergency-dim-opacity:     0.6;                   /* de-emphasised side panels during a crisis */
+  --emergency-locked-opacity:  0.35;                  /* locked actions stay in place, grayed */
+
   /* Layout */
-  --radius-sm: 4px;
-  --radius:    8px;
-  --radius-lg: 12px;
-  --shadow-panel: 0 2px 8px rgba(0, 0, 0, 0.25);
+  --radius-sm: 6px;
+  --radius:    10px;
+  --radius-lg: 14px;
+  --shadow-panel: 0 2px 10px rgba(29, 39, 51, 0.07);
   --border-width: 1px;
 }

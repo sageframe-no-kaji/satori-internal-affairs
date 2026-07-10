@@ -85,11 +85,15 @@
             {/if}
           {/each}
 
-          <!-- Raw event data for debugging -->
-          <details class="raw-events">
-            <summary>Raw events ({entry.events.length})</summary>
-            <pre>{JSON.stringify(entry.events, null, 2)}</pre>
-          </details>
+          <!-- Raw event data for debugging — opt-in via VITE_DEBUG_EVENTS=1
+               (P2-H11: debug chrome stays out of the player surface, even
+               in dev, unless explicitly asked for) -->
+          {#if import.meta.env.VITE_DEBUG_EVENTS}
+            <details class="raw-events">
+              <summary>Raw events ({entry.events.length})</summary>
+              <pre>{JSON.stringify(entry.events, null, 2)}</pre>
+            </details>
+          {/if}
         </div>
       {/each}
     {/if}

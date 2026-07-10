@@ -12,7 +12,10 @@
 
   Universal Design:
   - 18px body text, AA contrast on card backgrounds
-  - Cards are non-interactive; the panel scrolls, nothing collapses or hides
+  - Cards are non-interactive; category headers are windowshade toggles
+    (practitioner request, P2-H11) — full-width targets at the 60px floor,
+    keyboard-operable, with the finding count always visible so a collapsed
+    section never hides that new evidence arrived
   - Flag chips carry text — no information by color alone
   - Stable category regions: the player knows where to look when new
     evidence arrives, and re-finding a fact is spatial, not a search
@@ -21,6 +24,7 @@
     findings — server-composed findings from the game state, chronological
 -->
 <script lang="ts">
+  import { tick } from 'svelte';
   import type { Finding } from '$lib/types';
 
   let { findings }: { findings: Finding[] } = $props();
@@ -57,6 +61,50 @@
 
   let sections = $derived(buildSections(findings));
 
+  // Windowshade state (practitioner request, P2-H11): each category header
+  // toggles its section closed/open. Default open; collapsed headers keep
+  // the finding count visible so arriving evidence is never silent.
+  let collapsed = $state<Record<string, boolean>>({});
+
+  function toggleSection(key: string) {
+    collapsed[key] = !collapsed[key];
+  }
+
+  // Fresh-evidence highlight (practitioner request, P2-H11): findings that
+  // arrived on the latest turn tint their section header and card light
+  // green. When they land, sections WITHOUT fresh evidence roll their
+  // shades up and the fresh section opens and scrolls to the top of the
+  // pane — new evidence is never buried, section order never changes, and
+  // everything else is one tap away with its count still showing.
+  // Self-clearing — the next turn's findings replace the set. Visual
+  // attention only: keyboard focus stays wherever the player left it
+  // (moving it mid-flow would cost an ataxia player their place in the
+  // action bar).
+  let panelBody = $state<HTMLDivElement | null>(null);
+  let freshIds = $state<Set<string>>(new Set());
+  let prevIds = new Set<string>();
+
+  $effect(() => {
+    const current = new Set(findings.map((f) => f.node_id));
+    const fresh = new Set([...current].filter((id) => !prevIds.has(id)));
+    prevIds = current;
+    freshIds = fresh;
+    if (fresh.size > 0) {
+      const next: Record<string, boolean> = {};
+      for (const section of sections) {
+        next[section.key] = !section.items.some((f) => fresh.has(f.node_id));
+      }
+      collapsed = next;
+      void tick().then(() => {
+        panelBody?.querySelector('.is-fresh')?.scrollIntoView({ block: 'start' });
+      });
+    }
+  });
+
+  function sectionFresh(section: Section): boolean {
+    return section.items.some((f) => freshIds.has(f.node_id));
+  }
+
   /** Convert a snake_case key to Title Case. */
   function humanise(key: string): string {
     return key
@@ -78,27 +126,40 @@
     <h2 class="panel-title">Active Concerns</h2>
   </header>
 
-  <div class="panel-body">
+  <div class="panel-body" bind:this={panelBody}>
     {#if findings.length === 0}
       <p class="empty-state">No findings yet.</p>
     {:else}
       {#each sections as section (section.key)}
         <div class="category-section">
-          <h3 class="category-header">{section.label}</h3>
-          {#each section.items as finding (finding.node_id)}
-            <article class="finding-card">
-              <h4 class="finding-label">{finding.label}</h4>
-              <p class="finding-text">{finding.narrative_text}</p>
-              {#if flagChips(finding).length > 0}
-                <div class="finding-chips">
-                  {#each flagChips(finding) as chip}
-                    <span class="finding-chip">{chip}</span>
-                  {/each}
-                </div>
-              {/if}
-              <span class="finding-time">T+{finding.revealed_at_minutes}&nbsp;min</span>
-            </article>
-          {/each}
+          <h3 class="category-header">
+            <button
+              class="category-toggle"
+              class:is-fresh={sectionFresh(section)}
+              type="button"
+              aria-expanded={!collapsed[section.key]}
+              onclick={() => toggleSection(section.key)}
+            >
+              <span>{section.label} ({section.items.length})</span>
+              <span class="toggle-arrow" aria-hidden="true">{collapsed[section.key] ? '▸' : '▾'}</span>
+            </button>
+          </h3>
+          {#if !collapsed[section.key]}
+            {#each section.items as finding (finding.node_id)}
+              <article class="finding-card" class:is-fresh={freshIds.has(finding.node_id)}>
+                <h4 class="finding-label">{finding.label}</h4>
+                <p class="finding-text">{finding.narrative_text}</p>
+                {#if flagChips(finding).length > 0}
+                  <div class="finding-chips">
+                    {#each flagChips(finding) as chip}
+                      <span class="finding-chip">{chip}</span>
+                    {/each}
+                  </div>
+                {/if}
+                <span class="finding-time">T+{finding.revealed_at_minutes}&nbsp;min</span>
+              </article>
+            {/each}
+          {/if}
         </div>
       {/each}
     {/if}
@@ -134,10 +195,12 @@
   .panel-body {
     flex: 1;
     overflow-y: auto;
-    padding: var(--space-4);
+    padding: var(--space-3);
     display: flex;
     flex-direction: column;
-    gap: var(--space-5);
+    /* Tight, but the gap between adjacent interactive headers stays at the
+       16px touch-gap floor (gap + separator padding below). */
+    gap: var(--space-2);
   }
 
   .empty-state {
@@ -151,21 +214,70 @@
   .category-section {
     display: flex;
     flex-direction: column;
-    gap: var(--space-3);
+    gap: var(--space-2);
   }
 
   .category-section + .category-section {
     border-top: var(--border-width) solid var(--color-border);
-    padding-top: var(--space-4);
+    padding-top: var(--space-2);
   }
 
   .category-header {
+    margin: 0;
+  }
+
+  /* Windowshade toggle — a full-width interactive header at the ataxia
+     touch floor; the whole row is the target. */
+  .category-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    min-height: var(--touch-target-min);
+    padding: 0 var(--space-2);
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-family: var(--font-stack);
     font-size: var(--font-size-sm);
     font-weight: 600;
     color: var(--color-text-muted);
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    margin: 0;
+    transition: background 0.1s;
+  }
+
+  .category-toggle:hover,
+  .category-toggle:focus-visible {
+    background: var(--color-bg-panel-alt);
+    color: var(--color-text);
+    outline: 2px solid var(--color-accent);
+    outline-offset: -2px;
+  }
+
+  /* Fresh evidence: light green marks where the latest turn's findings
+     landed — header and card both, count always visible. */
+  .category-toggle.is-fresh {
+    background: var(--color-fresh-bg);
+    color: var(--color-fresh-text);
+  }
+
+  .category-toggle.is-fresh .toggle-arrow {
+    color: var(--color-fresh-text);
+  }
+
+  .finding-card.is-fresh {
+    background: var(--color-fresh-bg);
+    border-color: var(--color-state-normal);
+  }
+
+  /* The windowshade affordance — oversized on purpose (ataxia: the state
+     of the shade must read at a glance, from arm's length). */
+  .toggle-arrow {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-xl);
+    line-height: 1;
   }
 
   .finding-card {
@@ -199,9 +311,9 @@
   }
 
   .finding-chip {
-    background: var(--color-badge-bg-warning);
+    background: var(--color-chip-bg);
     border-radius: var(--radius-sm);
-    color: var(--color-state-warning);
+    color: var(--color-chip-text);
     font-size: var(--font-size-sm);
     font-weight: 600;
     padding: var(--space-1) var(--space-2);

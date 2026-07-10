@@ -192,7 +192,7 @@
 
   .emergency-action:hover:not(:disabled),
   .emergency-action:focus-visible {
-    background: var(--color-badge-bg-critical);
+    background: var(--color-emergency-bg-hover);
     outline: 2px solid var(--color-state-critical);
     outline-offset: 2px;
   }

@@ -30,44 +30,46 @@
 </div>
 
 <style>
+  /* Tokenized in P2-H11 — this component predated the token rule. */
   .patient-header {
-    background: #1e2330;
-    border: 1px solid #2e3447;
-    border-radius: 6px;
-    padding: 14px 18px;
+    background: var(--color-bg-panel);
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius);
+    padding: var(--space-3) var(--space-4);
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: var(--space-1);
+    box-shadow: var(--shadow-panel);
   }
 
   .patient-identity {
     display: flex;
     align-items: baseline;
-    gap: 12px;
+    gap: var(--space-3);
   }
 
   .patient-name {
-    font-size: 1.15rem;
-    font-weight: 600;
-    color: #e8ecf4;
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    color: var(--color-text);
   }
 
   .patient-meta {
-    font-size: 0.85rem;
-    color: #7a89a8;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
   }
 
   .chief-complaint,
   .appearance,
   .triage-note {
-    font-size: 0.9rem;
-    color: #c0c8da;
-    line-height: 1.5;
+    font-size: var(--font-size-sm);
+    color: var(--color-text);
+    line-height: var(--line-height);
   }
 
   .label {
     font-weight: 600;
-    color: #8a96b4;
-    margin-right: 6px;
+    color: var(--color-text-muted);
+    margin-right: var(--space-1);
   }
 </style>

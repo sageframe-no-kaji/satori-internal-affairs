@@ -35,10 +35,18 @@
   } = $props();
 
   let isOpen = $state(false);
+  let rootEl = $state<HTMLDivElement | null>(null);
 
   function toggle() {
     if (disabled) return;
     isOpen = !isOpen;
+  }
+
+  /** Click/tap anywhere outside this dropdown closes it. */
+  function handleOutsidePointer(e: PointerEvent) {
+    if (isOpen && rootEl && !rootEl.contains(e.target as Node)) {
+      close();
+    }
   }
 
   function close() {
@@ -69,7 +77,9 @@
   }
 </script>
 
-<div class="category-dropdown" class:is-open={isOpen} class:is-disabled={disabled} class:is-locked={locked}>
+<svelte:window onpointerdown={handleOutsidePointer} />
+
+<div class="category-dropdown" bind:this={rootEl} class:is-open={isOpen} class:is-disabled={disabled} class:is-locked={locked}>
   <button
     class="category-trigger"
     type="button"
@@ -81,7 +91,7 @@
     onkeydown={handleTriggerKeydown}
   >
     <span class="category-label">{categoryLabel}</span>
-    <span class="dropdown-arrow" aria-hidden="true">{isOpen ? '▴' : '▾'}</span>
+    <span class="dropdown-arrow" aria-hidden="true">{isOpen ? '▾' : '▴'}</span>
   </button>
 
   {#if disabled && disabledReason}
@@ -182,10 +192,12 @@
     opacity: 1;
   }
 
+  /* The action bar is pinned to the viewport bottom (P2-H11), so menus
+     always fold UP — opening downward would clip at the screen edge. */
   .is-open .category-trigger {
     border-color: var(--color-accent);
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
   }
 
   .dropdown-arrow {
@@ -196,7 +208,7 @@
 
   .subcategory-list {
     position: absolute;
-    top: 100%;
+    bottom: 100%;
     left: 0;
     min-width: 100%;
     list-style: none;
@@ -204,9 +216,9 @@
     padding: var(--space-1) 0;
     background: var(--color-bg-panel-alt);
     border: var(--border-width) solid var(--color-accent);
-    border-top: none;
-    border-bottom-left-radius: var(--radius);
-    border-bottom-right-radius: var(--radius);
+    border-bottom: none;
+    border-top-left-radius: var(--radius);
+    border-top-right-radius: var(--radius);
     z-index: 100;
     box-shadow: var(--shadow-panel);
   }

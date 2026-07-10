@@ -51,65 +51,70 @@
 </div>
 
 <style>
+  /* Tokenized in P2-H11 — this component predated the token rule. Tier
+     colors map onto the state tokens; tier borders use the light tints. */
   .outcome-screen {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 40px 20px;
+    padding: var(--space-7) var(--space-5);
   }
 
   .outcome-card {
-    background: #1e2330;
-    border-radius: 10px;
-    border: 2px solid #2e3447;
-    padding: 36px 40px;
+    background: var(--color-bg-panel);
+    border-radius: var(--radius-lg);
+    border: 2px solid var(--color-border);
+    padding: var(--space-7) var(--space-7);
     text-align: center;
     max-width: 480px;
     width: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 16px;
+    gap: var(--space-4);
+    box-shadow: var(--shadow-panel);
   }
 
   .tier-label {
-    font-size: 1.6rem;
+    font-size: var(--font-size-xl);
     font-weight: 700;
     letter-spacing: 0.02em;
   }
 
   .end-reason {
-    font-size: 0.95rem;
-    color: #8a96b4;
-    line-height: 1.6;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    line-height: var(--line-height);
     max-width: 360px;
   }
 
   .outcome-narrative {
-    font-size: 0.95rem;
-    color: #b0bcd8;
-    line-height: 1.7;
+    font-size: var(--font-size-base);
+    color: var(--color-text);
+    line-height: var(--line-height);
     max-width: 380px;
     text-align: left;
   }
 
   .reset-btn {
-    margin-top: 8px;
-    background: #2e3a52;
-    border: 1px solid #3e4f72;
-    border-radius: 6px;
-    color: #c0cce8;
+    margin-top: var(--space-2);
+    background: var(--color-bg-panel);
+    border: var(--border-width) solid var(--color-accent);
+    border-radius: var(--radius);
+    color: var(--color-accent);
     cursor: pointer;
-    font-size: 0.95rem;
+    font-family: var(--font-stack);
+    font-size: var(--font-size-base);
     font-weight: 600;
     /* Sole control at case end — must meet the ataxia touch floor (audit UD-1) */
     min-height: var(--touch-target-pref);
-    padding: 10px 28px;
-    transition: background 0.1s;
+    padding: var(--space-2) var(--space-6);
+    transition: background 0.1s, color 0.1s;
   }
 
   .reset-btn:hover {
-    background: #364460;
+    background: var(--color-bg-panel-alt);
+    color: var(--color-accent-hover);
   }
 
   .reset-btn:focus-visible {
@@ -118,13 +123,13 @@
   }
 
   /* Tier colour overrides */
-  .tier-optimal .tier-label  { color: #6fcf97; }
-  .tier-good .tier-label     { color: #56ccf2; }
-  .tier-partial .tier-label  { color: #f2c94c; }
-  .tier-failure .tier-label  { color: #eb5757; }
+  .tier-optimal .tier-label  { color: var(--color-state-normal); }
+  .tier-good .tier-label     { color: var(--color-state-info); }
+  .tier-partial .tier-label  { color: var(--color-state-warning); }
+  .tier-failure .tier-label  { color: var(--color-state-critical); }
 
-  .tier-optimal  { border-color: #1a4a30; }
-  .tier-good     { border-color: #0d3040; }
-  .tier-partial  { border-color: #3a3010; }
-  .tier-failure  { border-color: #3a1010; }
+  .tier-optimal  { border-color: var(--color-tint-normal); }
+  .tier-good     { border-color: var(--color-tint-info); }
+  .tier-partial  { border-color: var(--color-tint-warning); }
+  .tier-failure  { border-color: var(--color-tint-critical); }
 </style>

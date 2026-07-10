@@ -12,7 +12,8 @@
 
   Universal Design:
   - 18px base font
-  - Colour contrasts meet WCAG AA against --color-bg-panel
+  - Colour contrasts meet WCAG AA against the monitor cell background
+    (the strip is the dark monitor inset — P2-H11)
   - No hover-only behaviours
 -->
 <script lang="ts">
@@ -113,7 +114,7 @@
   </div>
 
   <div class="vital vital-{o2Status(vitals.o2_saturation)}">
-    <span class="vital-label">SpO&sub2;</span>
+    <span class="vital-label">SpO₂</span>
     <span class="vital-value">{vitals.o2_saturation ?? '—'}</span>
     <span class="vital-unit">%</span>
   </div>
@@ -126,15 +127,18 @@
 </div>
 
 <style>
+  /* The strip is the dark monitor inset (P2-H11) — the one diegetic device
+     on the light page. Everything inside reads from --color-monitor-*. */
   .vitals-strip {
     display: flex;
     align-items: center;
     gap: var(--space-3);
-    background: var(--color-bg-panel);
-    border: var(--border-width) solid var(--color-border);
+    background: var(--color-monitor-bg);
+    border: var(--border-width) solid var(--color-monitor-border);
     border-radius: var(--radius);
     padding: var(--space-3) var(--space-4);
     flex-wrap: wrap;
+    box-shadow: var(--shadow-monitor-inset);
   }
 
   .vital {
@@ -143,7 +147,8 @@
     align-items: center;
     padding: var(--space-2) var(--space-3);
     border-radius: var(--radius-sm);
-    background: var(--color-bg-app);
+    background: var(--color-monitor-cell);
+    border: var(--border-width) solid var(--color-monitor-border);
     min-width: 80px;
   }
 
@@ -159,23 +164,24 @@
     font-size: var(--font-size-lg);
     font-weight: 700;
     line-height: 1.2;
+    font-variant-numeric: tabular-nums;
   }
 
   .vital-unit {
     font-size: var(--font-size-sm);
-    color: var(--color-text-dim);
+    color: var(--color-monitor-unit);
     line-height: 1.2;
   }
 
-  /* State colours */
-  .vital-normal .vital-label { color: var(--color-text-muted); }
-  .vital-normal .vital-value { color: var(--color-state-normal); }
+  /* State colours — monitor set, with a soft phosphor glow */
+  .vital-normal .vital-label { color: var(--color-monitor-label); }
+  .vital-normal .vital-value { color: var(--color-monitor-normal); text-shadow: var(--glow-normal); }
 
-  .vital-warn .vital-label   { color: var(--color-state-warning); }
-  .vital-warn .vital-value   { color: var(--color-state-warning); }
+  .vital-warn .vital-label   { color: var(--color-monitor-warning); }
+  .vital-warn .vital-value   { color: var(--color-monitor-warning); text-shadow: var(--glow-warning); }
 
-  .vital-critical .vital-label { color: var(--color-state-critical); }
-  .vital-critical .vital-value { color: var(--color-state-critical); }
+  .vital-critical .vital-label { color: var(--color-monitor-critical); }
+  .vital-critical .vital-value { color: var(--color-monitor-critical); text-shadow: var(--glow-critical); }
 
   /* Strip meta (condition + clock) */
   .strip-meta {
@@ -188,11 +194,11 @@
 
   .clock {
     font-size: var(--font-size-sm);
-    color: var(--color-text-muted);
+    color: var(--color-monitor-label);
     font-variant-numeric: tabular-nums;
   }
 
-  /* Condition badge */
+  /* Condition badge — monitor-scoped tints and text */
   .condition-badge {
     font-size: var(--font-size-sm);
     font-weight: 600;
@@ -202,10 +208,10 @@
     letter-spacing: 0.05em;
   }
 
-  .badge-stable       { background: var(--color-badge-bg-normal);    color: var(--color-state-normal); }
-  .badge-compensating { background: var(--color-badge-bg-warning);   color: var(--color-state-warning); }
-  .badge-decompensating { background: var(--color-badge-bg-decomp);  color: var(--color-state-warning); }
-  .badge-critical     { background: var(--color-badge-bg-critical);  color: var(--color-state-critical); }
-  .badge-dead         { background: var(--color-badge-bg-dead);      color: var(--color-text-muted); }
-  .badge-recovered    { background: var(--color-badge-bg-recovered); color: var(--color-state-info); }
+  .badge-stable       { background: var(--color-badge-bg-normal);    color: var(--color-monitor-normal); }
+  .badge-compensating { background: var(--color-badge-bg-warning);   color: var(--color-monitor-warning); }
+  .badge-decompensating { background: var(--color-badge-bg-decomp);  color: var(--color-monitor-warning); }
+  .badge-critical     { background: var(--color-badge-bg-critical);  color: var(--color-monitor-critical); }
+  .badge-dead         { background: var(--color-badge-bg-dead);      color: var(--color-monitor-label); }
+  .badge-recovered    { background: var(--color-badge-bg-recovered); color: var(--color-monitor-info); }
 </style>

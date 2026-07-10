@@ -125,6 +125,10 @@
     background: var(--color-bg-app);
     color: var(--color-text);
     min-height: 100vh;
+    /* iPad-app shell (P2-H11): the page never scrolls or bounces —
+       only panel contents scroll. */
+    overflow: hidden;
+    overscroll-behavior: none;
   }
 
   /* ---- Start view ---- */
@@ -199,6 +203,9 @@
   }
 
   /* ---- Dashboard layout ---- */
+  /* Viewport-locked (P2-H11): header + vitals pinned top, actions pinned
+     bottom, the body row takes the remainder and its panels scroll
+     internally. Nothing else moves. */
   .dashboard {
     display: grid;
     grid-template-rows: auto auto 1fr auto;
@@ -207,7 +214,8 @@
       "vitals"
       "body"
       "actions";
-    min-height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
     gap: var(--space-4);
     padding: var(--space-4);
     background: var(--color-bg-app);
