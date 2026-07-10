@@ -1,5 +1,6 @@
 ---
 created: 2026-07-09
+updated: 2026-07-10
 type: state-memory
 project: satori-internal-affairs
 kamae: 6
@@ -14,12 +15,12 @@ This file is the build's living cross-session memory: hot, mutable, and non-cano
 
 **STATE-SUMMARY**
 
-- **COMPLETED** — P2-H09 (crisis mechanic and scoring): survivable seizure crisis, post-crisis re-arm via node_20/node_21, fallthrough failure tier, `emergency_timer` visibility channel, OPTIMAL window widened to 150 min, `family_alienated` made mechanical — all six locked decisions executed and committed (`480254b`). Audit close-out also complete (`b351389`); all five audit tasks resolved.
+- **COMPLETED** — Phase 2 close-out (2026-07-10): P2-H05 emergency mode (`0592bb7` — engine `emergency_active` signal, API surface, top-banner signature + grayed-inline locked actions per practitioner visual decisions B/A, wait disabled in crises, feed emergency style, 11 new engine lifecycle tests); P2-H03 active concerns panel (`241f90c` — engine `revealed_at`, server-composed `findings`, bordered cards under category headers per decision A); P2-H10 uv migration (`db6e507` — workspace + committed uv.lock + package-lock.json, hooks/Makefile via `uv run --no-sync`, audit C-4 closed); P2-H08 plumbing spec drafted, NOT executed (`0bdd987`). Close-out report at `audit/close-out-report-2026-07-04.md`.
 
-- **NEXT** — P2-H05 (Emergency Mode): engine `emergency_active` derivation and API surface are determined and locked; visual decisions (emergency signature, locked-action treatment) are the remaining open questions requiring practitioner input before implementation. The ho document is at `ho-process/hos/P2-H05-emergency-mode.md` with status IN PROGRESS. After H05: P2-H03 (Active Concerns Panel) and P2-H08 (Real LLM Narrator) are the remaining Phase 2 hos before `v0.7` release.
+- **NEXT** — P2-H08 (Real LLM Narrator) is the only Phase 2 ho left before `v0.7`. It is **blocked on practitioner voice work** (register, prompt content — a thinking-conversation deliverable, not a coding session). The per-ho doc at `ho-process/hos/P2-H08-real-llm-narrator.md` specifies all plumbing and is marked DRAFT — VOICE WORK PENDING PRACTITIONER. Do not execute it until the voice work lands in that doc.
 
-- **ACTION ITEMS / BLOCKS** — P2-H05 visual decisions (emergency screen signature and locked-action presentation) are pending practitioner ruling before implementation can proceed. P2-H03 (Active Concerns Panel) has no ho document yet under `hos/` — it appears in the ho-overview but was not scaffolded. P2-H08 (Real LLM Narrator) similarly has no per-ho doc. No test regressions known; the verification stack enforces pre-commit. Untracked working files at `audit/fable-close-out-prompt-2026-07-04.md` and `ho-process/hos/P2-H05-emergency-mode.md` — the H05 doc exists but is not yet committed.
+- **ACTION ITEMS / BLOCKS** — (1) H08 blocked as above. (2) UD-4/UD-5 (dropdown focus + arrow keys) and UD-6 (outcome overlay focus trap) remain open from the audit; they were slated for H03's session but its authored scope didn't include them — needs a small dedicated UI ho. (3) Practitioner visual pass pending: H05 emergency dress and H03 cards verified by stack + contrast math only, not by eye. (4) npm audit advisories in the frontend tree (upgrades were out of H10 scope). (5) Frontend test framework still absent. No test regressions; 621 Python tests green through the pinned uv environment.
 
 - **PROJECT LIFECYCLE** — dev
 
-_Seeded 2026-07-09 from git history and repo docs by a fleet pass; verify on next session._
+_Updated 2026-07-10 at Phase 2 close-out (Hos H05/H03/H10 + H08 draft committed this session)._
