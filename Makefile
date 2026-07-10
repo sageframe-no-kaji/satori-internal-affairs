@@ -41,6 +41,8 @@ test:
 	# implementations and tests (audit/FABLE-REVIEW-2026-07-03.md §3).
 	uv run --no-sync pytest packages/llm-client/tests --cov=llm_client -q
 	uv run --no-sync pytest packages/satori-api/tests --cov=satori_api --cov-fail-under=90 -q
+	@echo "Running frontend tests (vitest)..."
+	cd packages/internal-affairs && npx vitest run
 
 dev-frontend:
 	@echo "Starting SvelteKit dev server (http://localhost:5173)..."

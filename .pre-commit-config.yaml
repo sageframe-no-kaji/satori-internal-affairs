@@ -52,3 +52,10 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
+      - id: vitest-frontend
+        # No coverage floor yet (P2-H14) — starter suite; floor revisited at v0.7.
+        name: vitest (frontend)
+        entry: bash -c 'cd packages/internal-affairs && npx vitest run'
+        language: system
+        pass_filenames: false
+        always_run: true
