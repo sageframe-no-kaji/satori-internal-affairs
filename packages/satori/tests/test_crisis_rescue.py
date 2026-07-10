@@ -16,6 +16,8 @@ These tests pin the survivable-crisis mechanic end to end:
   separate visibility channel and is None otherwise (including case end).
 - The untreated T+360 timeout lands in the fallthrough failure tier with a
   truthful narrative — not the death narrative.
+- GameState.emergency_active (P2-H05) is the UI's emergency-mode switch:
+  crisis flag AND NOT case_ended, agreeing with emergency_timer everywhere.
 
 Timeline arithmetic (authored case data): history_general costs 15 min and
 starts node_09's 180-minute clock, so the first crisis fires at t=195;
@@ -31,7 +33,7 @@ from pathlib import Path
 import pytest
 
 from satori.engine import SatoriEngine
-from satori.game_state import CRISIS_FLAG, compute_emergency_timer
+from satori.game_state import CRISIS_FLAG, compute_emergency_active, compute_emergency_timer
 from satori.models.case_definition import CaseDefinition
 
 INVESTIGATION_ACTIONS = (
@@ -242,6 +244,119 @@ class TestEmergencyTimerChannel:
         _drive_to_first_crisis(engine)
         state = engine.get_state()
         assert compute_emergency_timer(state, case_def) == state.emergency_timer
+
+
+class TestEmergencyActiveSignal:
+    """P2-H05: emergency_active is the UI's emergency-mode switch.
+
+    Derivation: CRISIS_FLAG in flags AND NOT case_ended — the same condition
+    compute_emergency_timer gates on, so the two surfaces can never disagree
+    (memo §2). These tests walk the signal through every lifecycle edge the
+    case can author: both crises, both rescues, death, treatment, timeout.
+    """
+
+    def test_false_at_case_start(self, engine: SatoriEngine) -> None:
+        assert engine.get_state().emergency_active is False
+
+    def test_false_before_the_crisis(self, engine: SatoriEngine) -> None:
+        engine.execute_action("history_general")
+        engine.execute_action("wait:60")
+        assert engine.get_state().emergency_active is False
+
+    def test_true_during_first_crisis(self, engine: SatoriEngine) -> None:
+        _drive_to_first_crisis(engine)
+        assert engine.get_state().emergency_active is True
+
+    def test_cleared_by_rescue(self, engine: SatoriEngine) -> None:
+        _drive_to_first_crisis(engine)
+        _rescue(engine)
+        assert engine.get_state().emergency_active is False
+
+    def test_true_again_during_second_crisis(self, engine: SatoriEngine) -> None:
+        _drive_to_first_crisis(engine)
+        _rescue(engine)
+        engine.execute_action("wait:60")
+        engine.execute_action("wait:60")  # second crisis at t=317
+        assert engine.get_state().emergency_active is True
+
+    def test_cleared_by_second_rescue(self, engine: SatoriEngine) -> None:
+        _drive_to_first_crisis(engine)
+        _rescue(engine)
+        engine.execute_action("wait:60")
+        engine.execute_action("wait:60")
+        _rescue(engine)
+        assert engine.get_state().emergency_active is False
+
+    def test_false_on_death_even_with_crisis_flag_still_set(self, engine: SatoriEngine) -> None:
+        """crisis_active survives into the death state; the NOT case_ended
+        guard keeps the outcome screen out of emergency dress (memo §2)."""
+        _drive_to_first_crisis(engine)
+        engine.execute_action("wait:15")
+        state = engine.get_state()
+        assert state.case_ended
+        assert CRISIS_FLAG in state.flags
+        assert state.emergency_active is False
+
+    def test_false_on_timeout_end(self, engine: SatoriEngine) -> None:
+        _drive_to_first_crisis(engine)
+        _rescue(engine)
+        engine.execute_action("wait:60")
+        engine.execute_action("wait:60")
+        _rescue(engine)
+        engine.execute_action("wait:60")  # t=379 >= 360: fallthrough timeout
+        state = engine.get_state()
+        assert state.case_ended
+        assert state.emergency_active is False
+
+    def test_same_tick_crisis_and_treatment_resolution(self, engine: SatoriEngine) -> None:
+        """Memo §2's same-tick edge: albendazole started at t=194 spans the
+        crisis firing at t=195. Within the tick, node_14's auto-reveal sets
+        the crisis flag and node_17's action reveal clears it (last-write,
+        deterministic post-S3); correct_treatment_started ends the case. The
+        final state — the only state the API surfaces — is never emergency."""
+        engine.execute_action("history_general")  # t=15; node_09 expires at 195
+        engine.execute_action("physical_exam_focused:neuro")  # t=25
+        engine.execute_action("order_labs:cbc")  # t=27; CBC reveals at 57
+        engine.execute_action("order_imaging:ct_head")  # t=29; CT reveals at 74
+        engine.execute_action("wait:60")  # t=89: eosinophilia + lesion -> node_18 unlocks treatment
+        engine.execute_action("wait:60")  # t=149
+        engine.execute_action("wait:30")  # t=179
+        engine.execute_action("wait:15")  # t=194, one minute before the crisis
+        engine.execute_action("start_treatment:albendazole")  # t=199
+        state = engine.get_state()
+        assert state.case_ended
+        assert state.current_time_minutes == 199
+        assert "node_14_seizure_crisis" in state.active_nodes  # the crisis genuinely fired
+        assert CRISIS_FLAG not in state.flags  # ...and the treatment reveal cleared it
+        assert "patient_death" not in state.flags
+        assert state.outcome_tier == "partial"
+        assert state.emergency_active is False
+        assert state.emergency_timer is None
+
+    def test_agrees_with_emergency_timer_at_every_step(self, engine: SatoriEngine) -> None:
+        """The invariant the two-surface design promises: emergency_timer is
+        non-None exactly when emergency_active is true, at every state."""
+        actions = (
+            "history_general",
+            "wait:60",
+            "wait:60",
+            "wait:60",  # first crisis at t=195
+            "emergency_intervention",
+            "wait:60",
+            "wait:60",  # second crisis at t=317
+            "emergency_intervention",
+            "wait:60",  # timeout at t=379
+        )
+        assert engine.get_state().emergency_active == (engine.get_state().emergency_timer is not None)
+        for action in actions:
+            engine.execute_action(action)
+            state = engine.get_state()
+            assert state.emergency_active == (state.emergency_timer is not None), f"disagreement after {action}"
+
+    def test_derivation_is_pure_and_deterministic(self, engine: SatoriEngine) -> None:
+        _drive_to_first_crisis(engine)
+        state = engine.get_state()
+        assert compute_emergency_active(state) == state.emergency_active
 
 
 class TestTimeoutFallthroughTier:

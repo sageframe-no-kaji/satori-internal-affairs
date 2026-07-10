@@ -75,6 +75,7 @@ def state_to_response(state: GameState) -> GameStateResponse:
             )
             for vt in state.visible_timers
         ],
+        emergency_active=state.emergency_active,
         emergency_timer=(
             VisibleTimerResponse(
                 label=state.emergency_timer.label,

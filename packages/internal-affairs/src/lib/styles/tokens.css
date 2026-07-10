@@ -59,6 +59,14 @@
   --color-error-bg:           #3a1010;
   --color-error-border:       #5a1a1a;
 
+  /* Emergency mode (P2-H05) — banner signature + locked-action treatment */
+  --color-emergency-bg:        #5a1218;               /* banner crimson — 12.5:1 with emergency-text */
+  --color-emergency-text:      #ffe9e9;               /* banner label/countdown text */
+  --color-emergency-entry-bg:  rgba(214, 85, 85, 0.08); /* narrative-feed emergency entry tint */
+  --color-emergency-label:     #e07a7a;                /* red TEXT on dark tints — 5.5:1 where state-critical falls under AA */
+  --emergency-dim-opacity:     0.6;                   /* de-emphasised side panels during a crisis */
+  --emergency-locked-opacity:  0.35;                  /* locked actions stay in place, grayed */
+
   /* Condition badge backgrounds — dark tints behind state colours */
   --color-badge-bg-normal:    #1a3a2a;
   --color-badge-bg-warning:   #2d3312;

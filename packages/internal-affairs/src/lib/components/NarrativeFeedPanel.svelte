@@ -73,7 +73,7 @@
       <p class="empty-state">No actions taken yet.</p>
     {:else}
       {#each events as entry}
-        <div class="log-entry">
+        <div class="log-entry" class:log-entry-emergency={entry.emergency}>
           <div class="entry-header">
             <span class="action-label">{humanise(entry.action)}</span>
             <span class="entry-time">{formatTime(entry.timestamp_minutes)}</span>
@@ -149,6 +149,23 @@
     display: flex;
     flex-direction: column;
     gap: var(--space-2);
+  }
+
+  /* Emergency entries (P2-H05): turns taken while a crisis was in progress
+     read in the crisis register — including the turn the crisis began. */
+  .log-entry-emergency {
+    border-left-color: var(--color-state-critical);
+    background: var(--color-emergency-entry-bg);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    padding: var(--space-2) var(--space-3);
+  }
+
+  .log-entry-emergency .action-label {
+    color: var(--color-emergency-label);
+  }
+
+  .log-entry-emergency .narration-text {
+    color: var(--color-text);
   }
 
   .entry-header {

@@ -227,6 +227,30 @@ def test_state_to_response_emergency_timer_populated_during_crisis():
 
 
 # ---------------------------------------------------------------------------
+# emergency_active serialisation (P2-H05)
+# ---------------------------------------------------------------------------
+
+
+def test_state_to_response_emergency_active_false_outside_crisis(engine: SatoriEngine):
+    """Outside an emergency the field is present and False."""
+    resp = state_to_response(engine.get_state())
+    assert resp.emergency_active is False
+
+
+def test_state_to_response_emergency_active_true_during_crisis():
+    """During the seizure crisis the emergency-mode switch serialises True and
+    agrees with the emergency_timer channel."""
+    case = validate_case(EXAMPLE_CASE)
+    fresh_engine = SatoriEngine(case)
+    fresh_engine.execute_action("history_general")
+    for _ in range(3):
+        fresh_engine.execute_action("wait:60")  # crisis fires at t=195
+    resp = state_to_response(fresh_engine.get_state())
+    assert resp.emergency_active is True
+    assert resp.emergency_timer is not None
+
+
+# ---------------------------------------------------------------------------
 # resolve_tier_narrative (P2-H07)
 # ---------------------------------------------------------------------------
 

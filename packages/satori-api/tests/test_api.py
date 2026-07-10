@@ -654,6 +654,40 @@ def test_emergency_timer_populated_during_crisis_and_cleared_by_rescue():
     assert "crisis_managed" in data["state"]["flags"]
 
 
+def test_emergency_active_field_present_and_false_outside_crisis():
+    sid = _start_session()
+    resp = client.post(f"/api/sessions/{sid}/actions", json={"action": "history_general"})
+    state = resp.json()["state"]
+    assert "emergency_active" in state
+    assert state["emergency_active"] is False
+
+
+def test_emergency_active_true_during_crisis_and_cleared_by_rescue():
+    """P2-H05: the emergency-mode switch tracks the crisis through the API and
+    always agrees with the emergency_timer channel."""
+    sid = _start_session()
+    data = _drive_to_crisis(sid)
+    assert data["state"]["emergency_active"] is True
+    assert data["state"]["emergency_timer"] is not None
+
+    resp = client.post(f"/api/sessions/{sid}/actions", json={"action": "emergency_intervention"})
+    data = resp.json()
+    assert data["state"]["emergency_active"] is False
+    assert data["state"]["emergency_timer"] is None
+
+
+def test_emergency_active_false_on_death_end():
+    """crisis_active survives into the death state; the outcome screen must
+    not render in emergency dress (memo §2: crisis flag AND NOT case_ended)."""
+    sid = _start_session()
+    _drive_to_crisis(sid)
+    final = client.post(f"/api/sessions/{sid}/actions", json={"action": "wait:15"})
+    data = final.json()
+    assert data["case_ended"] is True
+    assert "crisis_active" in data["state"]["flags"]
+    assert data["state"]["emergency_active"] is False
+
+
 def test_timeout_run_returns_fallthrough_narrative_not_death():
     """Two rescued crises + timeout: outcome_narrative must be the authored
     fallthrough text (patient alive, transferred), not the death tier's text

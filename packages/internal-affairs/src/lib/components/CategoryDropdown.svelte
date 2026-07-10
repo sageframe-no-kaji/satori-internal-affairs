@@ -12,7 +12,9 @@
     categoryLabel  — display name for the category button (e.g. "Order Labs")
     actions        — array of { key, label } subcategory options
     disabled       — disables the entire dropdown when true
-    disabledReason — tooltip / aria-label clarifying why it's disabled
+    disabledReason — reason shown on hover AND focus (and via aria-label)
+    locked         — emergency-locked treatment (P2-H05): grayed further in
+                     place rather than the generic disabled look
     onAction       — callback with the selected action key
 -->
 <script lang="ts">
@@ -21,12 +23,14 @@
     actions,
     disabled = false,
     disabledReason = '',
+    locked = false,
     onAction,
   }: {
     categoryLabel: string;
     actions: Array<{ key: string; label: string }>;
     disabled?: boolean;
     disabledReason?: string;
+    locked?: boolean;
     onAction: (key: string) => void;
   } = $props();
 
@@ -65,20 +69,25 @@
   }
 </script>
 
-<div class="category-dropdown" class:is-open={isOpen} class:is-disabled={disabled}>
+<div class="category-dropdown" class:is-open={isOpen} class:is-disabled={disabled} class:is-locked={locked}>
   <button
     class="category-trigger"
     type="button"
     aria-haspopup="listbox"
     aria-expanded={isOpen}
     aria-disabled={disabled}
-    title={disabled && disabledReason ? disabledReason : undefined}
+    aria-label={disabled && disabledReason ? `${categoryLabel} — ${disabledReason}` : undefined}
     onclick={toggle}
     onkeydown={handleTriggerKeydown}
   >
     <span class="category-label">{categoryLabel}</span>
     <span class="dropdown-arrow" aria-hidden="true">{isOpen ? '▴' : '▾'}</span>
   </button>
+
+  {#if disabled && disabledReason}
+    <!-- Visible on hover AND keyboard focus — no hover-only behaviours -->
+    <span class="disabled-reason" role="tooltip">{disabledReason}</span>
+  {/if}
 
   {#if isOpen}
     <ul class="subcategory-list" role="listbox" aria-label="{categoryLabel} options">
@@ -140,6 +149,37 @@
   .is-disabled .category-trigger {
     opacity: 0.45;
     cursor: not-allowed;
+  }
+
+  /* Emergency-locked (P2-H05): grayed further, but still in place — spatial
+     memory is the point of the inline treatment. */
+  .is-locked .category-trigger {
+    opacity: var(--emergency-locked-opacity);
+  }
+
+  /* Lock reason: hidden until the trigger is hovered or keyboard-focused.
+     Positioned above the button — the action bar sits at the viewport bottom. */
+  .disabled-reason {
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    margin-bottom: var(--space-1);
+    padding: var(--space-1) var(--space-3);
+    background: var(--color-bg-panel-alt);
+    border: var(--border-width) solid var(--color-border-strong);
+    border-radius: var(--radius-sm);
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    white-space: nowrap;
+    box-shadow: var(--shadow-panel);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 100;
+  }
+
+  .category-dropdown:hover .disabled-reason,
+  .category-trigger:focus-visible ~ .disabled-reason {
+    opacity: 1;
   }
 
   .is-open .category-trigger {

@@ -94,6 +94,7 @@ class GameStateResponse(BaseModel):
     current_vitals: VitalSignsResponse
     available_actions: list[str]
     visible_timers: list[VisibleTimerResponse]
+    emergency_active: bool = False
     emergency_timer: VisibleTimerResponse | None = None
     case_ended: bool
     outcome_tier: str | None = None

@@ -70,6 +70,10 @@ export interface GameState {
   current_vitals: VitalSigns;
   available_actions: string[];
   visible_timers: VisibleTimer[];
+  /** True while a crisis is in progress and the case has not ended (P2-H05). */
+  emergency_active: boolean;
+  /** The active crisis countdown — the one non-diegetic timer shown (P2-H09). */
+  emergency_timer: VisibleTimer | null;
   case_ended: boolean;
   outcome_tier: string | null;
   end_reason: string | null;
@@ -146,6 +150,8 @@ export interface EventLogEntry {
   timestamp_minutes: number;
   events: GameEvent[];
   narrations: string[];
+  /** True if an emergency was in progress after this turn (P2-H05) — styles the entry. */
+  emergency: boolean;
 }
 
 // ---------------------------------------------------------------------------

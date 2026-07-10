@@ -84,6 +84,11 @@ class GameState:
     # Computed by compute_visible_timers() and set on every state update.
     visible_timers: tuple[VisibleTimer, ...] = ()
 
+    # Derived: whether an emergency is in progress — the reserved crisis flag
+    # is set and the case has not ended. The UI's emergency-mode switch.
+    # Computed by compute_emergency_active() and set on every state update.
+    emergency_active: bool = False
+
     # Derived: the currently-active crisis node's countdown, or None outside
     # emergencies. The one non-diegetic timer the player is shown — the
     # emergency itself is visible to the character. Kept separate so
@@ -174,6 +179,18 @@ def compute_visible_timers(state: "GameState", case: CaseDefinition) -> tuple[Vi
 
     timers.sort(key=lambda t: (t.remaining_minutes, t.node_id))
     return tuple(timers)
+
+
+def compute_emergency_active(state: "GameState") -> bool:
+    """Derive whether the dashboard should be in emergency mode.
+
+    True while the reserved crisis flag is set AND the case has not ended —
+    the guard keeps the outcome screen out of emergency dress when death (or
+    a same-tick resolution) ends the case with the flag still set (emergency-
+    mode decision memo, §2). Same condition compute_emergency_timer gates on,
+    so the two surfaces can never disagree.
+    """
+    return CRISIS_FLAG in state.flags and not state.case_ended
 
 
 def _sets_crisis_flag(node_effects: NodeEffects) -> bool:

@@ -11,6 +11,7 @@
 -->
 <script lang="ts">
   import PatientHeader from '$lib/components/PatientHeader.svelte';
+  import EmergencyBanner from '$lib/components/EmergencyBanner.svelte';
   import VitalsStrip from '$lib/components/VitalsStrip.svelte';
   import ActiveConcernsPanel from '$lib/components/ActiveConcernsPanel.svelte';
   import NarrativeFeedPanel from '$lib/components/NarrativeFeedPanel.svelte';
@@ -49,7 +50,17 @@
 <!-- Play view + outcome overlay                                          -->
 <!-- ------------------------------------------------------------------ -->
 {:else if (game.view === 'play' || game.view === 'outcome') && game.gameState && game.patient}
-  <main class="dashboard">
+  <main class="dashboard" class:is-emergency={game.emergencyActive}>
+    <!-- Row 0: emergency banner — present only while a crisis is in progress -->
+    {#if game.emergencyActive && game.emergencyTimer}
+      <div class="dashboard-emergency">
+        <EmergencyBanner
+          label={game.emergencyTimer.label}
+          remaining_minutes={game.emergencyTimer.remaining_minutes}
+        />
+      </div>
+    {/if}
+
     <!-- Row 1: patient header -->
     <div class="dashboard-header">
       <PatientHeader patient={game.patient} />
@@ -78,6 +89,8 @@
       {/if}
       <ActionBar
         actions={game.availableActions}
+        lockedActions={game.lockedActions}
+        emergencyActive={game.emergencyActive}
         loading={game.isLoading}
         elapsed_minutes={game.gameState.current_time_minutes}
         onAction={(action) => game.performAction(action)}
@@ -200,10 +213,33 @@
     background: var(--color-bg-app);
   }
 
+  /* Emergency mode (P2-H05, visual decision 1): the banner takes a row of its
+     own at the top; the body row absorbs the shift so the action bar and its
+     targets do not move. */
+  .dashboard.is-emergency {
+    grid-template-rows: auto auto auto 1fr auto;
+    grid-template-areas:
+      "emergency"
+      "header"
+      "vitals"
+      "body"
+      "actions";
+  }
+
+  .dashboard-emergency { grid-area: emergency; }
   .dashboard-header  { grid-area: header; }
   .dashboard-vitals  { grid-area: vitals; }
   .dashboard-body    { grid-area: body; }
   .dashboard-actions { grid-area: actions; display: flex; flex-direction: column; gap: var(--space-2); }
+
+  /* Emergency dress: side panels step back; the narrative feed stays fully
+     legible (the crisis narration lives there) and vitals stay undimmed —
+     the clinician watches the monitor. */
+  .is-emergency .dashboard-body :global(.active-concerns-panel),
+  .is-emergency .dashboard-body :global(.pending-results-panel) {
+    opacity: var(--emergency-dim-opacity);
+    transition: opacity 0.2s ease-out;
+  }
 
   .dashboard-body {
     display: grid;

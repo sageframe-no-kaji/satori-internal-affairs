@@ -10,7 +10,12 @@ from satori.action_parser import parse_action
 from satori.condition_evaluator import ConditionEvaluator
 from satori.effect_executor import EffectExecutor
 from satori.events import Event, NodeExpiredEvent, NodeRevealedEvent, TimeAdvancedEvent, TimerStageEvent, WaitedEvent
-from satori.game_state import GameState, compute_emergency_timer, compute_visible_timers
+from satori.game_state import (
+    GameState,
+    compute_emergency_active,
+    compute_emergency_timer,
+    compute_visible_timers,
+)
 from satori.models.case_definition import CaseDefinition, Node, NodeContent
 from satori.state_checkers import StateCheckers
 from satori.timer_manager import TimerManager
@@ -216,6 +221,7 @@ class SatoriEngine:
         state = replace(
             state,
             visible_timers=compute_visible_timers(state, self.case),
+            emergency_active=compute_emergency_active(state),
             emergency_timer=compute_emergency_timer(state, self.case),
         )
 
@@ -353,6 +359,7 @@ class SatoriEngine:
         new_state = replace(
             new_state,
             visible_timers=compute_visible_timers(new_state, self.case),
+            emergency_active=compute_emergency_active(new_state),
             emergency_timer=compute_emergency_timer(new_state, self.case),
         )
 
@@ -459,6 +466,7 @@ class SatoriEngine:
         new_state = replace(
             new_state,
             visible_timers=compute_visible_timers(new_state, self.case),
+            emergency_active=compute_emergency_active(new_state),
             emergency_timer=compute_emergency_timer(new_state, self.case),
         )
 

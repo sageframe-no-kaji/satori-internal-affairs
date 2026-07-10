@@ -43,6 +43,13 @@ function createGameStore() {
   // Event log: one entry per executed action, newest first
   let eventLog = $state<EventLogEntry[]>([]);
 
+  // Presentation memory (P2-H05): the last playable actions the server sent
+  // while NO emergency was active. During a crisis the engine removes locked
+  // actions from playable_actions; this snapshot lets the UI show them grayed
+  // in place instead of vanishing. Display only — the engine remains the sole
+  // authority on what is executable (Truth Line).
+  let lastCalmActions = $state<string[]>([]);
+
   // Outcome narrative: the per-tier authored text from the case, set on case end.
   let outcomeNarrative = $state<string | null>(null);
 
@@ -65,6 +72,9 @@ function createGameStore() {
       patient = resp.patient;
       patientCondition = resp.patient_condition;
       availableActions = resp.playable_actions;
+      if (!resp.state.emergency_active) {
+        lastCalmActions = resp.playable_actions;
+      }
       eventLog = [];
       view = 'play';
     } catch (e) {
@@ -85,6 +95,9 @@ function createGameStore() {
       gameState = resp.state;
       patientCondition = resp.patient_condition;
       availableActions = resp.playable_actions;
+      if (!resp.state.emergency_active) {
+        lastCalmActions = resp.playable_actions;
+      }
 
       // Prepend to event log (newest first)
       eventLog = [
@@ -93,6 +106,7 @@ function createGameStore() {
           timestamp_minutes: resp.state.current_time_minutes,
           events: resp.events,
           narrations: resp.narrations,
+          emergency: resp.state.emergency_active,
         },
         ...eventLog,
       ];
@@ -114,6 +128,7 @@ function createGameStore() {
     patient = null;
     patientCondition = 'stable';
     availableActions = [];
+    lastCalmActions = [];
     outcomeNarrative = null;
     eventLog = [];
     view = 'start';
@@ -140,6 +155,26 @@ function createGameStore() {
     /** Diegetic timers from the latest game state. Empty array when no session. */
     get visibleTimers(): VisibleTimer[] {
       return gameState?.visible_timers ?? [];
+    },
+
+    /** True while a crisis is in progress (server-derived; P2-H05). */
+    get emergencyActive(): boolean {
+      return gameState?.emergency_active ?? false;
+    },
+
+    /** The active crisis countdown, or null outside emergencies. */
+    get emergencyTimer(): VisibleTimer | null {
+      return gameState?.emergency_timer ?? null;
+    },
+
+    /**
+     * Actions locked by the current emergency: in the last calm snapshot but
+     * not currently playable. Empty outside emergencies. Shown grayed in
+     * place (visual decision 2) — attempting one still fails server-side.
+     */
+    get lockedActions(): string[] {
+      if (!gameState?.emergency_active) return [];
+      return lastCalmActions.filter((a) => !availableActions.includes(a));
     },
 
     startSession,
