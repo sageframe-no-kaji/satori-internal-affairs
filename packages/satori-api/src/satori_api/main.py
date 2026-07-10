@@ -157,38 +157,46 @@ def execute_action(session_id: str, body: ExecuteActionRequest) -> ActionRespons
     are always present so the frontend can fully re-render without a
     separate GET.
     """
-    engine = session_manager.get_engine(session_id)
-    if engine is None:
+    lock = session_manager.lock_for(session_id)
+    if lock is None:
         raise HTTPException(status_code=404, detail=f"Session '{session_id}' not found")
 
-    try:
-        events = engine.execute_action(body.action)
-    except InvalidActionError as exc:
-        raise HTTPException(
-            status_code=400,
-            detail=str(exc),
-        ) from exc
+    # Per-session write lock (audit C-8): concurrent actions on one session
+    # serialize instead of losing updates. Held across execute + narrate +
+    # serialize — the response must read the state this action produced.
+    with lock:
+        engine = session_manager.get_engine(session_id)
+        if engine is None:
+            raise HTTPException(status_code=404, detail=f"Session '{session_id}' not found")
 
-    narrations = narrate_events(events, engine)
-    state = engine.get_state()
-    condition = compute_patient_condition(state, engine.case)
+        try:
+            events = engine.execute_action(body.action)
+        except InvalidActionError as exc:
+            raise HTTPException(
+                status_code=400,
+                detail=str(exc),
+            ) from exc
 
-    return ActionResponse(
-        events=events_to_responses(events),
-        narrations=narrations,
-        state=state_to_response(state, engine.case),
-        patient_condition=condition.value,
-        available_actions=sorted(state.available_actions),
-        playable_actions=sorted(engine.get_playable_actions()),
-        case_ended=state.case_ended,
-        outcome_tier=state.outcome_tier,
-        end_reason=state.end_reason,
-        # Prefer the narrative of the tier that actually matched (tier levels
-        # are not unique — two tiers can share the "failure" register); fall
-        # back to the level-keyed lookup for cases ended purely by an
-        # end_case effect, where no tier evaluation runs.
-        outcome_narrative=state.outcome_narrative or resolve_tier_narrative(engine.case, state.outcome_tier),
-    )
+        narrations = narrate_events(events, engine)
+        state = engine.get_state()
+        condition = compute_patient_condition(state, engine.case)
+
+        return ActionResponse(
+            events=events_to_responses(events),
+            narrations=narrations,
+            state=state_to_response(state, engine.case),
+            patient_condition=condition.value,
+            available_actions=sorted(state.available_actions),
+            playable_actions=sorted(engine.get_playable_actions()),
+            case_ended=state.case_ended,
+            outcome_tier=state.outcome_tier,
+            end_reason=state.end_reason,
+            # Prefer the narrative of the tier that actually matched (tier levels
+            # are not unique — two tiers can share the "failure" register); fall
+            # back to the level-keyed lookup for cases ended purely by an
+            # end_case effect, where no tier evaluation runs.
+            outcome_narrative=state.outcome_narrative or resolve_tier_narrative(engine.case, state.outcome_tier),
+        )
 
 
 # ---------------------------------------------------------------------------
