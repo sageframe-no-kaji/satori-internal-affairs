@@ -4,7 +4,10 @@
   Universal Design requirements:
   - All interactive elements: min-height var(--touch-target-pref) = 72px
   - Gap between elements >= var(--space-4) = 16px
-  - Keyboard navigation: Enter to toggle open, Esc to close, Tab through options
+  - Keyboard (ARIA listbox, P2-H12): Enter/Space/arrows open and focus the
+    first option; arrows cycle with wrap; Home/End jump; Esc and selection
+    close and return focus to the trigger; Tab out closes; click-off closes
+    without stealing focus
   - No hover-only behaviours: focus and active show the same states as hover
   - Visible focus rings on all interactive elements
 
@@ -18,6 +21,8 @@
     onAction       — callback with the selected action key
 -->
 <script lang="ts">
+  import { tick } from 'svelte';
+
   let {
     categoryLabel,
     actions,
@@ -36,51 +41,103 @@
 
   let isOpen = $state(false);
   let rootEl = $state<HTMLDivElement | null>(null);
+  let triggerEl = $state<HTMLButtonElement | null>(null);
+  let listEl = $state<HTMLUListElement | null>(null);
+
+  function optionEls(): HTMLElement[] {
+    return listEl ? [...listEl.querySelectorAll<HTMLElement>('[role="option"]')] : [];
+  }
+
+  function open() {
+    if (disabled) return;
+    isOpen = true;
+    // UD-4: focus lands on the first option once the list renders
+    void tick().then(() => optionEls()[0]?.focus());
+  }
+
+  /** returnFocus: true for keyboard/selection paths (UD-5 — focus must not
+      drop to <body>); false for click-off (the player aimed elsewhere). */
+  function close(returnFocus: boolean) {
+    isOpen = false;
+    if (returnFocus) triggerEl?.focus();
+  }
 
   function toggle() {
     if (disabled) return;
-    isOpen = !isOpen;
+    if (isOpen) close(true);
+    else open();
   }
 
   /** Click/tap anywhere outside this dropdown closes it. */
   function handleOutsidePointer(e: PointerEvent) {
     if (isOpen && rootEl && !rootEl.contains(e.target as Node)) {
-      close();
+      close(false);
     }
   }
 
-  function close() {
-    isOpen = false;
+  /** Tab (or any focus move) out of the component closes the menu. */
+  function handleFocusOut(e: FocusEvent) {
+    if (isOpen && rootEl && !rootEl.contains(e.relatedTarget as Node)) {
+      close(false);
+    }
   }
 
   function handleAction(key: string) {
     onAction(key);
-    close();
+    close(true);
   }
 
   function handleTriggerKeydown(e: KeyboardEvent) {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       toggle();
+    } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      // Either arrow opens (the menu folds up, so Up is the natural gesture)
+      e.preventDefault();
+      if (!isOpen) open();
+      else optionEls()[0]?.focus();
     } else if (e.key === 'Escape') {
-      close();
+      close(true);
     }
   }
 
   function handleOptionKeydown(e: KeyboardEvent, key: string) {
+    const opts = optionEls();
+    const idx = opts.indexOf(e.currentTarget as HTMLElement);
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       handleAction(key);
     } else if (e.key === 'Escape') {
-      close();
+      e.preventDefault();
+      close(true);
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      opts[(idx + 1) % opts.length]?.focus();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      opts[(idx - 1 + opts.length) % opts.length]?.focus();
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      opts[0]?.focus();
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      opts[opts.length - 1]?.focus();
     }
   }
 </script>
 
 <svelte:window onpointerdown={handleOutsidePointer} />
 
-<div class="category-dropdown" bind:this={rootEl} class:is-open={isOpen} class:is-disabled={disabled} class:is-locked={locked}>
+<div
+  class="category-dropdown"
+  bind:this={rootEl}
+  class:is-open={isOpen}
+  class:is-disabled={disabled}
+  class:is-locked={locked}
+  onfocusout={handleFocusOut}
+>
   <button
+    bind:this={triggerEl}
     class="category-trigger"
     type="button"
     aria-haspopup="listbox"
@@ -100,7 +157,7 @@
   {/if}
 
   {#if isOpen}
-    <ul class="subcategory-list" role="listbox" aria-label="{categoryLabel} options">
+    <ul bind:this={listEl} class="subcategory-list" role="listbox" aria-label="{categoryLabel} options">
       {#each actions as action}
         <li
           class="subcategory-option"

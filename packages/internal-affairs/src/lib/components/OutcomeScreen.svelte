@@ -15,6 +15,24 @@
     onReset: () => void;
   } = $props();
 
+  // UD-6: the overlay declares aria-modal — make it true. Play Again is the
+  // sole interactive, so focus moves to it when the case ends and Tab is
+  // trapped on it (the trap lives on the button itself — focus has nowhere
+  // else legitimate to be). No Escape-to-dismiss: dismissing resets the
+  // game, which must stay a deliberate press.
+  let resetBtn = $state<HTMLButtonElement | null>(null);
+
+  $effect(() => {
+    resetBtn?.focus();
+  });
+
+  function trapTab(e: KeyboardEvent) {
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      resetBtn?.focus();
+    }
+  }
+
   const tierLabel: Record<string, string> = {
     optimal: 'Optimal Outcome',
     good: 'Good Outcome',
@@ -44,7 +62,7 @@
       <div class="end-reason">{end_reason}</div>
     {/if}
 
-    <button class="reset-btn" onclick={onReset}>
+    <button bind:this={resetBtn} class="reset-btn" onclick={onReset} onkeydown={trapTab}>
       Play Again
     </button>
   </div>
