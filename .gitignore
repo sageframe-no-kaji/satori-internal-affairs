@@ -32,7 +32,8 @@ build/
 .output/
 .vercel/
 .netlify/
-package-lock.json
+# package-lock.json is COMMITTED (P2-H10, audit C-4: reproducible env);
+# non-npm lockfiles stay ignored — npm is the package manager here.
 yarn.lock
 pnpm-lock.yaml
 

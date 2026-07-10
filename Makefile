@@ -3,7 +3,7 @@
 help:
 	@echo "Satori Internal Affairs - Development Commands"
 	@echo ""
-	@echo "  make setup         - Install all dependencies (Python venvs + npm install)"
+	@echo "  make setup         - Install all dependencies (uv workspace + npm install)"
 	@echo "  make lint          - Run ruff across all Python packages"
 	@echo "  make typecheck     - Run mypy across all Python packages"
 	@echo "  make test          - Run pytest across all Python packages"
@@ -13,37 +13,34 @@ help:
 	@echo "  make clean         - Clean build artifacts and caches"
 
 setup:
-	@echo "Installing Python packages in development mode..."
-	pip install -e packages/satori[dev]
-	pip install -e packages/anamnesis[dev]
-	pip install -e packages/llm-client[dev]
-	pip install -e packages/satori-api[dev]
+	@echo "Syncing uv workspace (single .venv from the committed uv.lock)..."
+	uv sync --all-packages --all-extras
 	@echo "Installing frontend dependencies..."
 	cd packages/internal-affairs && npm install
 	@echo "Setup complete!"
 
 lint:
 	@echo "Running ruff on all Python packages..."
-	ruff check packages/satori/src packages/satori/tests
-	ruff check packages/anamnesis/src packages/anamnesis/tests
-	ruff check packages/llm-client/src packages/llm-client/tests
-	ruff check packages/satori-api/src packages/satori-api/tests
+	uv run --no-sync ruff check packages/satori/src packages/satori/tests
+	uv run --no-sync ruff check packages/anamnesis/src packages/anamnesis/tests
+	uv run --no-sync ruff check packages/llm-client/src packages/llm-client/tests
+	uv run --no-sync ruff check packages/satori-api/src packages/satori-api/tests
 
 typecheck:
 	@echo "Running mypy on all Python packages..."
-	mypy packages/satori/src
-	mypy packages/anamnesis/src
-	mypy packages/llm-client/src
-	mypy packages/satori-api/src
+	uv run --no-sync mypy packages/satori/src
+	uv run --no-sync mypy packages/anamnesis/src
+	uv run --no-sync mypy packages/llm-client/src
+	uv run --no-sync mypy packages/satori-api/src
 
 test:
 	@echo "Running pytest on all Python packages (coverage floor 90)..."
-	pytest packages/satori/tests --cov=satori --cov-fail-under=90 -q
-	pytest packages/anamnesis/tests --cov=anamnesis --cov-fail-under=90 -q
+	uv run --no-sync pytest packages/satori/tests --cov=satori --cov-fail-under=90 -q
+	uv run --no-sync pytest packages/anamnesis/tests --cov=anamnesis --cov-fail-under=90 -q
 	# llm-client exempt from the floor until P2-H08 rewrites the provider
 	# implementations and tests (audit/FABLE-REVIEW-2026-07-03.md §3).
-	pytest packages/llm-client/tests --cov=llm_client -q
-	pytest packages/satori-api/tests --cov=satori_api --cov-fail-under=90 -q
+	uv run --no-sync pytest packages/llm-client/tests --cov=llm_client -q
+	uv run --no-sync pytest packages/satori-api/tests --cov=satori_api --cov-fail-under=90 -q
 
 dev-frontend:
 	@echo "Starting SvelteKit dev server (http://localhost:5173)..."
@@ -51,7 +48,7 @@ dev-frontend:
 
 dev-api:
 	@echo "Starting satori-api FastAPI server (http://localhost:8000)..."
-	cd packages/satori-api && uvicorn satori_api.main:app --reload --port 8000
+	uv run --no-sync uvicorn satori_api.main:app --reload --port 8000
 
 dev-all:
 	@echo ""

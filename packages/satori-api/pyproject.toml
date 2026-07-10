@@ -25,6 +25,10 @@ dev = [
     "mypy>=1.6.0",
 ]
 
+[tool.uv.sources]
+satori = { workspace = true }
+llm-client = { workspace = true }
+
 [tool.ruff]
 line-length = 120
 target-version = "py311"

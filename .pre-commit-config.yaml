@@ -1,39 +1,39 @@
 # Verification gate — audit S1 (report C-3). LINT → TYPE-CHECK → TEST at
 # every commit; a commit does not happen unless all hooks are green.
 #
-# All hooks run the ambient toolchain (language: system) until the uv
-# migration (audit C-4) pins a committed project environment. Requires:
-# ruff, mypy, pytest + pytest-cov, and the four packages installed editable.
+# All hooks run through the uv workspace environment (P2-H10, audit C-4):
+# the committed uv.lock pins the toolchain. --no-sync keeps hooks from
+# mutating the environment mid-commit — `make setup` owns syncing.
 repos:
   - repo: local
     hooks:
       - id: ruff-check
         name: ruff check
-        entry: ruff check packages/
+        entry: uv run --no-sync ruff check packages/
         language: system
         pass_filenames: false
         always_run: true
       - id: ruff-format
         name: ruff format (check)
-        entry: ruff format --check packages/
+        entry: uv run --no-sync ruff format --check packages/
         language: system
         pass_filenames: false
         always_run: true
       - id: mypy
         name: mypy strict (root config)
-        entry: mypy packages/satori/src packages/anamnesis/src packages/llm-client/src packages/satori-api/src
+        entry: uv run --no-sync mypy packages/satori/src packages/anamnesis/src packages/llm-client/src packages/satori-api/src
         language: system
         pass_filenames: false
         always_run: true
       - id: pytest-satori
         name: pytest satori (coverage >= 90)
-        entry: pytest packages/satori/tests --cov=satori --cov-fail-under=90 -q
+        entry: uv run --no-sync pytest packages/satori/tests --cov=satori --cov-fail-under=90 -q
         language: system
         pass_filenames: false
         always_run: true
       - id: pytest-anamnesis
         name: pytest anamnesis (coverage >= 90)
-        entry: pytest packages/anamnesis/tests --cov=anamnesis --cov-fail-under=90 -q
+        entry: uv run --no-sync pytest packages/anamnesis/tests --cov=anamnesis --cov-fail-under=90 -q
         language: system
         pass_filenames: false
         always_run: true
@@ -42,13 +42,13 @@ repos:
         # implementations and their tests (audit/FABLE-REVIEW-2026-07-03.md §3:
         # provider tests importorskip the SDKs and cover ~0% of those files).
         name: pytest llm-client (coverage measured, floor deferred to P2-H08)
-        entry: pytest packages/llm-client/tests --cov=llm_client -q
+        entry: uv run --no-sync pytest packages/llm-client/tests --cov=llm_client -q
         language: system
         pass_filenames: false
         always_run: true
       - id: pytest-satori-api
         name: pytest satori-api (coverage >= 90)
-        entry: pytest packages/satori-api/tests --cov=satori_api --cov-fail-under=90 -q
+        entry: uv run --no-sync pytest packages/satori-api/tests --cov=satori_api --cov-fail-under=90 -q
         language: system
         pass_filenames: false
         always_run: true

@@ -1,0 +1,14 @@
+# Virtual uv workspace root (P2-H10, audit C-4).
+#
+# No [project] section on purpose: the root is not a package. All four
+# Python packages resolve into one .venv from the committed uv.lock.
+# Tool configuration stays where it lives — mypy.ini / pytest.ini at the
+# root, [tool.ruff] etc. in each package's own pyproject.toml.
+
+[tool.uv.workspace]
+members = [
+    "packages/satori",
+    "packages/anamnesis",
+    "packages/llm-client",
+    "packages/satori-api",
+]
