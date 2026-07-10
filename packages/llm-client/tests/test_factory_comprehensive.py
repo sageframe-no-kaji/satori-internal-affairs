@@ -34,16 +34,19 @@ def test_create_narrator_openai_not_implemented():
         create_narrator(config)
 
 
-def test_create_narrator_anthropic_not_implemented():
-    """Factory with ANTHROPIC provider raises — no real Narrator provider in Phase 1."""
+def test_create_narrator_anthropic_dispatches_live_narrator():
+    """Factory with ANTHROPIC provider builds the live narrator (P2-H08;
+    superseded the Phase-1 'not implemented' pin)."""
+    pytest.importorskip("anthropic")
+    from llm_client.anthropic_narrator import AnthropicNarrator
+
     config = ModelConfig(
         provider=Provider.ANTHROPIC,
         model="claude-sonnet-4-20250514",
         api_key="sk-ant-test-key",
     )
 
-    with pytest.raises(LLMClientError, match="No live Narrator implementation.*anthropic"):
-        create_narrator(config)
+    assert isinstance(create_narrator(config), AnthropicNarrator)
 
 
 def test_create_action_interpreter_mock_returns_mock():

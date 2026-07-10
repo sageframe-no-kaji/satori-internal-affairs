@@ -45,6 +45,9 @@ class _Session:
     engine: SatoriEngine
     lock: threading.Lock = field(default_factory=threading.Lock)
     last_access: float = field(default_factory=time.monotonic)
+    # Per-session narration cache (P2-H08): (event_type, node_id) -> text.
+    # Dies with the session — no cross-session cache in Phase 2.
+    narration_cache: dict[tuple[str, str], str] = field(default_factory=dict)
 
 
 _sessions: dict[str, _Session] = {}
@@ -109,6 +112,16 @@ def lock_for(session_id: str) -> threading.Lock | None:
         return None
     session.last_access = time.monotonic()
     return session.lock
+
+
+def narration_cache_for(session_id: str) -> dict[tuple[str, str], str] | None:
+    """Return the session's narration cache (P2-H08), or ``None`` if the
+    session does not exist. Refreshes the session's idle clock."""
+    session = _sessions.get(session_id)
+    if session is None:
+        return None
+    session.last_access = time.monotonic()
+    return session.narration_cache
 
 
 def delete_session(session_id: str) -> None:

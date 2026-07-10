@@ -1,14 +1,22 @@
 """
 Server-side narration bridge.
 
-Converts Satori events into narrated text using the MockNarrator (Phase 1).
-Narration runs on the API server (Boundary 3 — the narration line). The
-frontend receives pre-narrated strings, never raw events for text generation.
+Converts Satori events into narrated text. Narration runs on the API server
+(Boundary 3 — the narration line). The frontend receives pre-narrated
+strings, never raw events for text generation.
+
+Provider selection (P2-H08) is environment-driven at import time:
+  SATORI_NARRATOR_PROVIDER  mock (default) | anthropic
+  SATORI_NARRATOR_MODEL     model id (default: claude-sonnet-4-6)
+  ANTHROPIC_API_KEY         required for the anthropic provider
+Invalid or missing live config falls back to mock with a loud log line —
+absent configuration must never break local dev.
 """
 
 from __future__ import annotations
 
 import logging
+import os
 from typing import Any
 
 from llm_client import (
@@ -40,9 +48,40 @@ from satori import (
 # Module-level narrator (singleton)
 # ---------------------------------------------------------------------------
 
-_narrator: Narrator = create_narrator(ModelConfig(provider=Provider.MOCK, model="mock"))
-
 _logger = logging.getLogger(__name__)
+
+DEFAULT_NARRATOR_MODEL = "claude-sonnet-4-6"
+# Narration is a sentence or two — a tight token budget keeps latency and
+# cost proportionate to the output.
+NARRATION_MAX_TOKENS = 300
+
+
+def _narrator_from_env() -> Narrator:
+    """Build the narrator from environment configuration.
+
+    Mock is the default and the fallback: a missing key, an unknown provider
+    string, or a failed client init logs loudly and returns mock — the game
+    always runs.
+    """
+    provider_name = os.environ.get("SATORI_NARRATOR_PROVIDER", "mock").strip().lower()
+    if provider_name in ("", "mock"):
+        return create_narrator(ModelConfig(provider=Provider.MOCK, model="mock"))
+    try:
+        config = ModelConfig(
+            provider=Provider(provider_name),
+            model=os.environ.get("SATORI_NARRATOR_MODEL", DEFAULT_NARRATOR_MODEL),
+            api_key=os.environ.get("ANTHROPIC_API_KEY"),
+            max_tokens=NARRATION_MAX_TOKENS,
+        )
+        narrator = create_narrator(config)
+        _logger.info("Live narrator active: provider=%s model=%s", provider_name, config.model)
+        return narrator
+    except Exception:  # noqa: BLE001 — config failure degrades to mock; the game must start regardless
+        _logger.exception("Failed to build '%s' narrator from environment; falling back to mock", provider_name)
+        return create_narrator(ModelConfig(provider=Provider.MOCK, model="mock"))
+
+
+_narrator: Narrator = _narrator_from_env()
 
 
 # ---------------------------------------------------------------------------
@@ -125,13 +164,24 @@ def _describe_event(event: Event) -> tuple[str, dict[str, Any] | None]:
 # ---------------------------------------------------------------------------
 
 
-def narrate_events(events: list[Event], engine: SatoriEngine) -> list[str]:
+def narrate_events(
+    events: list[Event],
+    engine: SatoriEngine,
+    cache: dict[tuple[str, str], str] | None = None,
+) -> list[str]:
     """
     Narrate a list of events in the context of the current engine state.
 
     Returns a list of narration strings parallel to ``events``.
     Events that are not player-facing (e.g. internal flags) still receive
     a narration string — the frontend can choose to filter by event type.
+
+    ``cache`` is the per-session narration cache (P2-H08), keyed
+    ``(event_type, node_id)`` — identical node events mid-session reuse
+    their narration instead of re-calling the provider. Only node-bearing
+    events cache; waits and time advances vary by content. Fallback strings
+    are never cached (a transient provider failure should not pin the
+    templated text for the rest of the session).
     """
     state = engine.get_state()
     case = engine.case
@@ -160,15 +210,29 @@ def narrate_events(events: list[Event], engine: SatoriEngine) -> list[str]:
     narrations: list[str] = []
     for event in events:
         description, structured_data = _describe_event(event)
+
+        node_id = getattr(event, "node_id", None)
+        cache_key: tuple[str, str] | None = (
+            (event.type.value, node_id) if cache is not None and isinstance(node_id, str) else None
+        )
+        if cache_key is not None and cache is not None and cache_key in cache:
+            narrations.append(cache[cache_key])
+            continue
+
         narration_event = NarrationEvent(
             event_type=event.type.value,
             description=description,
             structured_data=structured_data,
         )
         try:
-            narrations.append(_narrator.narrate(narration_event, context))
+            narration = _narrator.narrate(narration_event, context)
         except Exception:  # noqa: BLE001 — narration is cosmetic (Narration Line): any narrator failure degrades to the plain description; it must never break gameplay
             _logger.exception("Narrator failed for %s; using fallback description", event.type.value)
             narrations.append(description)
+            continue
+
+        if cache_key is not None and cache is not None:
+            cache[cache_key] = narration
+        narrations.append(narration)
 
     return narrations

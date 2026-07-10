@@ -24,6 +24,9 @@ class ModelConfig:
     api_key: str | None = None  # None for mock
     temperature: float = 0.7
     max_tokens: int = 16384
+    # Request timeout — a slow provider must degrade to the fallback path,
+    # not hang the game loop (P2-H08)
+    timeout_seconds: float = 30.0
     # Path to JSON schema file for prompt inclusion (CaseGenerator only)
     schema_path: str | None = None
 
@@ -86,7 +89,13 @@ def create_narrator(config: ModelConfig) -> Narrator:
     if config.api_key is None:
         raise LLMClientError(f"api_key required for provider {config.provider}")
 
-    # No live implementations yet — Phase 1 only has mocks
+    if config.provider == Provider.ANTHROPIC:
+        from llm_client.anthropic_narrator import AnthropicNarrator
+
+        return AnthropicNarrator(config)
+
+    # OpenAI narrator: no implementation until a case for it exists (P2-H08
+    # chose Anthropic; multi-provider failover is explicitly out of scope)
     raise LLMClientError(f"No live Narrator implementation for provider {config.provider}")
 
 

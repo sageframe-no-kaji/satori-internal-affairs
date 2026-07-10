@@ -1,14 +1,25 @@
 # P2-H08: Real LLM Narrator
 
-**Status:** DRAFT — VOICE WORK PENDING PRACTITIONER
+**Status:** PLUMBING LANDED (2026-07-10, practitioner-authorized split) — VOICE WORK PENDING PRACTITIONER
 **Phase:** 2
 **Ho:** 08
 **Depends on:** P2-H02 (narrative feed), P2-H03 (concerns panel carries non-narrative content), P2-H05 (emergency events styled distinctly in the feed)
 
 > This document specifies the technical plumbing only. The narrator's voice —
 > register, prompt content, tone constraints, examples — is the practitioner's
-> work and is deliberately absent. Do not execute this ho, and do not write
-> prompt content, until the voice work happens in a thinking conversation.
+> work and is deliberately absent. Do not write prompt content until the voice
+> work happens in a thinking conversation.
+>
+> **Split (practitioner-authorized, 2026-07-10):** the voice-independent
+> plumbing (AnthropicNarrator, per-session cache, env wiring, timeout +
+> fallback) landed ahead of the voice work with a clearly-marked PLACEHOLDER
+> system prompt in `llm_client/narration_prompts.py`. **Remaining for H08
+> completion:** the voice session's output (`docs/architecture/narrator-voice.md`,
+> per `prompts/h08-voice-session.md`) replaces the placeholder and fills the
+> `EVENT_GUIDANCE` slots; the live smoke test runs behind the `live_llm`
+> marker; the llm-client coverage floor is restored. The default provider
+> stays `mock` until then — the placeholder never narrates in anyone's game
+> unless explicitly enabled by env.
 
 ---
 

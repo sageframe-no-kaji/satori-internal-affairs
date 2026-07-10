@@ -170,3 +170,129 @@ def test_action_endpoint_survives_narrator_failure(monkeypatch: pytest.MonkeyPat
     payload = response.json()
     assert payload["state"]["current_time_minutes"] > 0
     assert len(payload["narrations"]) == len(payload["events"])
+
+
+# ---------------------------------------------------------------------------
+# Narration cache (P2-H08)
+# ---------------------------------------------------------------------------
+
+
+class _CountingNarrator:
+    """Counts narrate calls; returns a distinct string per call."""
+
+    def __init__(self) -> None:
+        self.calls = 0
+
+    def narrate(self, event: object, context: object) -> str:
+        self.calls += 1
+        return f"narration-{self.calls}"
+
+
+def _fresh_with_reveal() -> tuple[SatoriEngine, list[Event]]:
+    """Deterministic node-bearing events: history_general reveals node_01.
+    (_fresh() picks list(frozenset)[0] — hash-seed-dependent, and some
+    actions produce no node events.)"""
+    case = validate_case(EXAMPLE_CASE)
+    eng = SatoriEngine(case)
+    return eng, list(eng.execute_action("history_general"))
+
+
+def test_cache_reuses_narration_for_repeated_node_events(monkeypatch: pytest.MonkeyPatch):
+    import satori_api.narrator_bridge as bridge
+
+    counting = _CountingNarrator()
+    monkeypatch.setattr(bridge, "_narrator", counting)
+    eng, events = _fresh_with_reveal()
+    node_events = [e for e in events if hasattr(e, "node_id")]
+    assert node_events, "expected at least one node-bearing event"
+
+    cache: dict[tuple[str, str], str] = {}
+    first = narrate_events(node_events, eng, cache)
+    calls_after_first = counting.calls
+    second = narrate_events(node_events, eng, cache)
+
+    assert counting.calls == calls_after_first  # every repeat was a cache hit
+    assert second == first
+
+
+def test_no_cache_means_no_reuse(monkeypatch: pytest.MonkeyPatch):
+    import satori_api.narrator_bridge as bridge
+
+    counting = _CountingNarrator()
+    monkeypatch.setattr(bridge, "_narrator", counting)
+    eng, events = _fresh_with_reveal()
+    node_events = [e for e in events if hasattr(e, "node_id")]
+    assert node_events, "expected at least one node-bearing event"
+
+    narrate_events(node_events, eng)
+    calls_after_first = counting.calls
+    narrate_events(node_events, eng)
+    assert counting.calls == calls_after_first * 2
+
+
+def test_fallback_strings_are_not_cached(monkeypatch: pytest.MonkeyPatch):
+    """A transient provider failure must not pin the templated text for the
+    rest of the session — the next occurrence retries the narrator."""
+    import satori_api.narrator_bridge as bridge
+
+    counting = _CountingNarrator()
+    monkeypatch.setattr(bridge, "_narrator", _RaisingNarrator())
+    eng, events = _fresh_with_reveal()
+    node_events = [e for e in events if hasattr(e, "node_id")]
+    assert node_events, "expected at least one node-bearing event"
+
+    cache: dict[tuple[str, str], str] = {}
+    narrate_events(node_events, eng, cache)
+    assert cache == {}  # nothing pinned
+
+    monkeypatch.setattr(bridge, "_narrator", counting)
+    narrations = narrate_events(node_events, eng, cache)
+    assert counting.calls > 0  # retried live
+    assert all(n.startswith("narration-") for n in narrations)
+
+
+# ---------------------------------------------------------------------------
+# Env-driven narrator construction (P2-H08)
+# ---------------------------------------------------------------------------
+
+
+def test_env_default_is_mock(monkeypatch: pytest.MonkeyPatch):
+    from llm_client.mock import MockNarrator
+
+    from satori_api.narrator_bridge import _narrator_from_env
+
+    monkeypatch.delenv("SATORI_NARRATOR_PROVIDER", raising=False)
+    assert isinstance(_narrator_from_env(), MockNarrator)
+
+
+def test_env_anthropic_with_key_builds_live_narrator(monkeypatch: pytest.MonkeyPatch):
+    pytest.importorskip("anthropic")
+    from llm_client.anthropic_narrator import AnthropicNarrator
+
+    from satori_api.narrator_bridge import _narrator_from_env
+
+    monkeypatch.setenv("SATORI_NARRATOR_PROVIDER", "anthropic")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
+    monkeypatch.delenv("SATORI_NARRATOR_MODEL", raising=False)
+    narrator = _narrator_from_env()
+    assert isinstance(narrator, AnthropicNarrator)
+    assert narrator.config.model == "claude-sonnet-4-6"
+
+
+def test_env_anthropic_without_key_falls_back_to_mock(monkeypatch: pytest.MonkeyPatch):
+    from llm_client.mock import MockNarrator
+
+    from satori_api.narrator_bridge import _narrator_from_env
+
+    monkeypatch.setenv("SATORI_NARRATOR_PROVIDER", "anthropic")
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    assert isinstance(_narrator_from_env(), MockNarrator)
+
+
+def test_env_unknown_provider_falls_back_to_mock(monkeypatch: pytest.MonkeyPatch):
+    from llm_client.mock import MockNarrator
+
+    from satori_api.narrator_bridge import _narrator_from_env
+
+    monkeypatch.setenv("SATORI_NARRATOR_PROVIDER", "grok")
+    assert isinstance(_narrator_from_env(), MockNarrator)

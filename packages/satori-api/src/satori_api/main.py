@@ -177,7 +177,7 @@ def execute_action(session_id: str, body: ExecuteActionRequest) -> ActionRespons
                 detail=str(exc),
             ) from exc
 
-        narrations = narrate_events(events, engine)
+        narrations = narrate_events(events, engine, session_manager.narration_cache_for(session_id))
         state = engine.get_state()
         condition = compute_patient_condition(state, engine.case)
 
