@@ -1,0 +1,82 @@
+{
+  "keisaku": 1,
+  "works": [
+    {
+      "id": "satori",
+      "name": "Satori — Internal Affairs",
+      "hero": "Governance lives in architecture, not in the model.",
+      "importance": 7,
+      "featured": true,
+      "group": "production-systems",
+      "themes": [
+        "knowledge",
+        "agency"
+      ],
+      "sort_order_within_group": 40,
+      "tags": [
+        "software",
+        "demonstration",
+        "ai-governance",
+        "medical-simulation",
+        "deterministic-engine"
+      ],
+      "media": [
+        "software"
+      ],
+      "status": "in-development",
+      "repo": "git@github-no-kaji:sageframe-no-kaji/satori-internal-affairs.git",
+      "license": "MIT",
+      "tech_stack": "Python",
+      "created": "2026-04-28",
+      "last_updated": "2026-07-10",
+      "conceived": "2026-02-12",
+      "personal_stake": "Built for my teenage daughter, who lives with epilepsy from a TBI. She loves medical dramas and has spent enough time in hospitals to want to understand the medicine.",
+      "short_description": "Interactive medical mystery simulator. Players make genuine diagnostic decisions under pressure — ordering tests, forming differential diagnoses, managing uncertainty — with death as a possible consequence of error. Built as a demonstration of AI governance. Four-package monorepo: Anamnesis (LLM case-generation pipeline at design-time), Satori (deterministic game engine running frozen cases with no runtime generation), an LLM client abstraction layer, and Internal Affairs (SvelteKit frontend). Cases are generated once and frozen as immutable JSON — gameplay is deterministic and auditable even though the cases themselves are AI-authored.",
+      "substantive_description": [
+        "Version one was a single prompt: present a case, let the LLM improvise. That broke fast — facts invented, diagnoses changed mid-game, contradictions everywhere. Version two separates generation, execution, and narration into three layers. An LLM pipeline grounded in rigorous medical research generates cases from structured seeds; cases are validated against a JSON schema and frozen. A deterministic engine runs gameplay — actions, time, vitals, deterioration, outcomes. A final LLM layer adds narrative color at runtime, tightly bounded: it describes what happens, never decides what's medically true. Four boundaries enforce these separations: Freeze, Truth, Narration, Provider.",
+        "This is what AI in safety-sensitive domains has to do. The toy version is a medical game for one teenager. The general argument is for every regulated domain: healthcare, finance, law. Where you draw the boundaries between generation, execution, and narration determines what AI is allowed to do, what humans evaluate, and what factual integrity is preserved. Satori is the working demonstration. Its paired companion in this body of work is Glassroom — same architectural principle, inverse direction."
+      ],
+      "images": {
+        "gallery": []
+      },
+      "relationships": [
+        {
+          "edge_class": "narrative",
+          "target": "glassroom",
+          "type": "paired_with",
+          "articulated_in": "judgment-at-scale",
+          "note": "Same architectural principle, inverse direction: Satori protects downstream consumers from upstream AI generation; Glassroom surfaces institutional data structured to be obscure. Both built for the same daughter."
+        }
+      ],
+      "state": {
+        "stage": "dev",
+        "last": "Phase 2 close-out + first practitioner visual pass (2026-07-10): P2-H05 emergency mode (`0592bb7`); P2-H03 active concerns panel (`241f90c`); P2-H10 uv migration (`db6e507`); P2-H08 plumbing spec drafted, NOT executed (`0bdd987`); close-out report (`36f6a91`, at `audit/close-out-report-2026-07-04.md`); **P2-H11 iPad shell + clinical palette (`038c9f1`)** — practitioner-directed live HMR session: palette Option C (light clinical app, dark monitor vitals inset), viewport-locked shell (pinned header/vitals/actions, panels scroll internally), fold-up dropdowns with click-off close, windowshade concern sections with fresh-evidence green highlight + auto-shade + scroll-to-top, SpO₂ fix, PatientHeader/OutcomeScreen tokenized. Approved on screen.",
+        "next": "P2-H08 completion is the only thing left before `v0.7`. The plumbing LANDED (`40bcd6c`, practitioner-authorized split): AnthropicNarrator, per-session cache, env wiring (mock default), timeout + fallback, with a clearly-marked PLACEHOLDER system prompt in `llm_client/narration_prompts.py`. **Remaining:** the practitioner's voice session (prompt at `prompts/h08-voice-session.md`, gitignored; output `docs/architecture/narrator-voice.md`) → drop the approved base system prompt into narration_prompts, fill EVENT_GUIDANCE, run the live smoke test behind `live_llm`, restore the llm-client coverage floor, set `SATORI_NARRATOR_PROVIDER=anthropic` in `.env`.",
+        "holdup": "(1) H08 voice work as above — the sole blocker for v0.7. (2) Frontend test framework LANDED (P2-H14 `148bc57`: vitest + testing-library, 38 tests, in the pre-commit gate; no coverage floor yet — revisit at v0.7). (3) npm audit advisories in the frontend tree. (4) Emergency-mode dress not yet seen by eye under the new light palette. P2-H12/H13 closed UD-4/5/6 and C-8 earlier today. 649 Python + 38 frontend tests green.",
+        "as_of": "2026-07-10"
+      },
+      "_keisaku": {
+        "generated_at": "2026-07-11T13:34:16",
+        "generator_version": "1",
+        "sources": {
+          "readme": "README.md",
+          "contract": "ho-process/kamae-6-satori-internal-affairs-state-memory.md",
+          "manifest": "pyproject.toml"
+        },
+        "derived_defaults": {
+          "id": "satori-internal-affairs",
+          "name": "Satori Internal Affairs",
+          "media": [
+            "software"
+          ],
+          "status": "in-development",
+          "created": "2026-02-09",
+          "tags": [
+            "python"
+          ]
+        },
+        "contract_issues": []
+      }
+    }
+  ]
+}
