@@ -31,10 +31,10 @@
       "last_updated": "2026-07-10",
       "conceived": "2026-02-12",
       "personal_stake": "Built for my teenage daughter, who lives with epilepsy from a TBI. She loves medical dramas and has spent enough time in hospitals to want to understand the medicine.",
-      "short_description": "Interactive medical mystery simulator. Players make genuine diagnostic decisions under pressure — ordering tests, forming differential diagnoses, managing uncertainty — with death as a possible consequence of error. Built as a demonstration of AI governance. Four-package monorepo: Anamnesis (LLM case-generation pipeline at design-time), Satori (deterministic game engine running frozen cases with no runtime generation), an LLM client abstraction layer, and Internal Affairs (SvelteKit frontend). Cases are generated once and frozen as immutable JSON — gameplay is deterministic and auditable even though the cases themselves are AI-authored.",
+      "short_description": "An interactive medical-mystery simulator built as a working demonstration of AI governance — players diagnose under pressure, and error can be fatal.",
       "substantive_description": [
-        "Version one was a single prompt: present a case, let the LLM improvise. That broke fast — facts invented, diagnoses changed mid-game, contradictions everywhere. Version two separates generation, execution, and narration into three layers. An LLM pipeline grounded in rigorous medical research generates cases from structured seeds; cases are validated against a JSON schema and frozen. A deterministic engine runs gameplay — actions, time, vitals, deterioration, outcomes. A final LLM layer adds narrative color at runtime, tightly bounded: it describes what happens, never decides what's medically true. Four boundaries enforce these separations: Freeze, Truth, Narration, Provider.",
-        "This is what AI in safety-sensitive domains has to do. The toy version is a medical game for one teenager. The general argument is for every regulated domain: healthcare, finance, law. Where you draw the boundaries between generation, execution, and narration determines what AI is allowed to do, what humans evaluate, and what factual integrity is preserved. Satori is the working demonstration. Its paired companion in this body of work is Glassroom — same architectural principle, inverse direction."
+        "Version one was a single prompt: present a case, let the model improvise. It broke fast — facts invented, diagnoses changed mid-game, contradictions everywhere. Satori's answer is to separate generation, execution, and narration into three layers: an LLM pipeline grounded in medical research generates cases from structured seeds and freezes them as immutable, schema-validated JSON; a deterministic engine runs gameplay — actions, time, vitals, deterioration, outcomes — with no runtime generation; and a tightly bounded final LLM layer adds narrative color that describes what happens but never decides what is medically true. Four boundaries — Freeze, Truth, Narration, Provider — enforce the separations, so gameplay stays deterministic and auditable even though the cases are AI-authored. The toy version is a medical game built for one teenager who lives with epilepsy from a TBI and wanted to understand the medicine; the general argument is for every regulated domain, where the boundaries between generation, execution, and narration determine what AI is allowed to do and what humans evaluate. Its paired companion is Glassroom — same architectural principle, inverse direction, built for the same daughter.",
+        "Python with Pydantic and a SvelteKit + TypeScript frontend, structured as a four-package monorepo — Anamnesis (design-time case generation), Satori (the deterministic engine), an LLM client abstraction, and Internal Affairs (the frontend). In development."
       ],
       "images": {
         "gallery": []
@@ -56,11 +56,12 @@
         "as_of": "2026-07-10"
       },
       "_keisaku": {
-        "generated_at": "2026-07-12T10:36:25",
+        "generated_at": "2026-07-13T10:31:22",
         "generator_version": "1",
         "sources": {
           "readme": "README.md",
           "contract": "ho-process/kamae-6-satori-internal-affairs-state-memory.md",
+          "description": "metadata/description.md",
           "manifest": "pyproject.toml"
         },
         "derived_defaults": {
@@ -73,6 +74,11 @@
           "created": "2026-02-09",
           "tags": [
             "python"
+          ],
+          "short_description": "An interactive medical-mystery simulator built as a working demonstration of AI governance — players diagnose under pressure, and error can be fatal.",
+          "substantive_description": [
+            "Version one was a single prompt: present a case, let the model improvise. It broke fast — facts invented, diagnoses changed mid-game, contradictions everywhere. Satori's answer is to separate generation, execution, and narration into three layers: an LLM pipeline grounded in medical research generates cases from structured seeds and freezes them as immutable, schema-validated JSON; a deterministic engine runs gameplay — actions, time, vitals, deterioration, outcomes — with no runtime generation; and a tightly bounded final LLM layer adds narrative color that describes what happens but never decides what is medically true. Four boundaries — Freeze, Truth, Narration, Provider — enforce the separations, so gameplay stays deterministic and auditable even though the cases are AI-authored. The toy version is a medical game built for one teenager who lives with epilepsy from a TBI and wanted to understand the medicine; the general argument is for every regulated domain, where the boundaries between generation, execution, and narration determine what AI is allowed to do and what humans evaluate. Its paired companion is Glassroom — same architectural principle, inverse direction, built for the same daughter.",
+            "Python with Pydantic and a SvelteKit + TypeScript frontend, structured as a four-package monorepo — Anamnesis (design-time case generation), Satori (the deterministic engine), an LLM client abstraction, and Internal Affairs (the frontend). In development."
           ]
         },
         "contract_issues": []
