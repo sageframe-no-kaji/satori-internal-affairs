@@ -48,6 +48,8 @@
           "note": "Same architectural principle, inverse direction: Satori protects downstream consumers from upstream AI generation; Glassroom surfaces institutional data structured to be obscure. Both built for the same daughter."
         }
       ],
+      "availability": "internal",
+      "usage": "me",
       "state": {
         "stage": "dev",
         "last": "Phase 2 close-out + first practitioner visual pass (2026-07-10): P2-H05 emergency mode (`0592bb7`); P2-H03 active concerns panel (`241f90c`); P2-H10 uv migration (`db6e507`); P2-H08 plumbing spec drafted, NOT executed (`0bdd987`); close-out report (`36f6a91`, at `audit/close-out-report-2026-07-04.md`); **P2-H11 iPad shell + clinical palette (`038c9f1`)** — practitioner-directed live HMR session: palette Option C (light clinical app, dark monitor vitals inset), viewport-locked shell (pinned header/vitals/actions, panels scroll internally), fold-up dropdowns with click-off close, windowshade concern sections with fresh-evidence green highlight + auto-shade + scroll-to-top, SpO₂ fix, PatientHeader/OutcomeScreen tokenized. Approved on screen.",
